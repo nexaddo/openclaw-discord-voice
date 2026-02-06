@@ -1,0 +1,24 @@
+{
+  "name": "openclaw-discord-voice",
+  "version": "0.1.0",
+  "description": "Discord voice integration plugin for OpenClaw",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "openclaw",
+    "discord",
+    "voice",
+    "ai",
+    "speech-to-text",
+    "text-to-speech"
+  ],
+  "author": "Spenser Austin",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nexaddo/openclaw-discord-voice.git"
+  }
+}
