@@ -1,0 +1,27 @@
+{
+  "name": "@openclaw/voice-extension",
+  "version": "0.1.0",
+  "description": "Discord voice extension for OpenClaw",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^25.2.0",
+    "vitest": "^4.0.18",
+    "@types/ws": "^8.18.1"
+  },
+  "peerDependencies": {
+    "openclaw": "^2026.2.2"
+  },
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}
