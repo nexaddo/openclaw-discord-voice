@@ -247,15 +247,6 @@
 
 ```
 plugins/discord-plugin/
-├── __tests__/
-│   ├── commands/
-│   │   └── voice.test.ts (20 tests)
-│   ├── handlers/
-│   │   └── EventHandler.test.ts (23 tests)
-│   ├── state/
-│   │   └── GuildStateManager.test.ts (18 tests)
-│   └── integration/
-│       └── PipelineAdapter.test.ts (6 tests)
 ├── src/
 │   ├── handlers/
 │   │   ├── CommandHandler.ts (6.1 KB)
@@ -267,10 +258,11 @@ plugins/discord-plugin/
 │   ├── types.ts (6.1 KB)
 │   └── index.ts (1.5 KB)
 ├── package.json
-├── tsconfig.json
-├── vitest.config.ts
 └── .gitignore
 ```
+
+**Note:** Test files and build configuration (tsconfig.json, vitest.config.ts) will be added
+in Phase 8 (CI/CD Pipeline) for integrated testing across phases.
 
 ---
 
