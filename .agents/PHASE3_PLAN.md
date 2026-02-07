@@ -148,7 +148,7 @@ export class AudioStreamHandler {
   // State management
   private isCapturing: boolean;
   private isPlaying: boolean;
-  private private listeners: Set<AudioStreamListener>;
+  private listeners: Set<AudioStreamListener>;
   
   // Metrics
   private captureStats: AudioStreamStats;
@@ -567,11 +567,11 @@ private createOpusEncoder(): OpusEncoder {
     // Discord requires exactly these parameters:
     // - Sample rate: 48,000 Hz
     // - Channels: 2 (stereo)
-    // - Frame size: 960 samples (20ms @ 48kHz)
+    // - Frame size: 960 samples (20ms @ 48kHz, Discord-compatible)
     const encoder = new OpusEncoder.Encoder(
       48000,           // sample rate
       2,               // channels
-      2880             // frame size in samples (60ms is also common: 2880)
+      960              // frame size in samples (20ms @ 48kHz)
     );
     
     // Optional: Set bitrate
@@ -638,7 +638,7 @@ private getOrCreateDecoder(ssrc: number): OpusDecoder {
       const decoder = new OpusDecoder.Decoder(
         48000,           // sample rate
         2,               // channels
-        2880             // frame size (same as encoder)
+        960              // frame size (20ms, same as encoder)
       );
       
       this.opusDecoders.set(ssrc, decoder);
@@ -698,7 +698,7 @@ decodeFromOpus(opusBuffer: Buffer, ssrc?: number): Buffer {
 |-----------|-------|--------|
 | Sample Rate | 48,000 Hz | Discord standard (strictly enforced) |
 | Channels | 2 | Stereo (always) |
-| Frame Size | 2880 | 60ms (Discord audio frames are 20ms) |
+| Frame Size | 960 | 20ms @ 48kHz (Discord-compatible audio frames) |
 | Bitrate | 64,000 bps | High quality, moderate compression |
 | Complexity | 9 | Slow encoder, best quality |
 | DTX | Enabled | Discontinuous Transmission (send silence as 1 byte) |
@@ -1473,7 +1473,7 @@ encodeToOpus(pcmBuffer: Buffer): Buffer
 decodeFromOpus(opusBuffer: Buffer, ssrc?: number): Buffer
 
 // Buffers
-getCapturBufferSize(): number
+getCaptureBufferSize(): number
 getPlaybackBufferSize(): number
 
 // Listeners & Stats

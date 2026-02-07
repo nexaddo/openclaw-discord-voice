@@ -170,7 +170,13 @@ export class VoiceConnectionManager extends EventEmitter {
 
       // Check if manager was destroyed during async permission check
       if (this.destroyed) {
-        throw new Error('Manager was destroyed during connection setup');
+        const error = new VoiceConnectionError(
+          VoiceErrorType.INVALID_STATE,
+          'Manager was destroyed during connection setup',
+          { guildId, channelId }
+        );
+        this.tryEmitError(guildId, error);
+        throw error;
       }
 
       // Create connection info BEFORE state updates (so updateConnectionState has data to work with)
@@ -641,31 +647,68 @@ export class VoiceConnectionManager extends EventEmitter {
   }
 
   /**
-   * Checks if bot has permission to connect and speak
+   * Checks if bot has permission to connect and speak in a specific channel
+   * Uses channel.permissionsFor(botMember) to get effective permissions
+   * considering channel-level permission overwrites
    * @private
    */
   private async checkPermissions(guildId: string, channelId: string): Promise<boolean> {
     try {
       const guild = this.botClient.guilds?.get?.(guildId);
       if (!guild) {
+        this.logger('checkPermissions() - guild not found', { guildId, channelId });
+        return false;
+      }
+
+      // Get the target channel
+      const channel = guild.channels?.cache?.get?.(channelId);
+      if (!channel) {
+        this.logger('checkPermissions() - channel not found', { guildId, channelId });
         return false;
       }
 
       // Try to fetch the bot member's permissions
       if (typeof guild.members?.fetchMe === 'function') {
         const botMember = await guild.members.fetchMe();
-        if (botMember && typeof botMember.permissions?.has === 'function') {
-          // Check for CONNECT permission (bit 0x100000)
-          return botMember.permissions.has('CONNECT');
+        if (!botMember) {
+          this.logger('checkPermissions() - failed to fetch bot member', { guildId, channelId });
+          return false;
+        }
+
+        // Use channel.permissionsFor() to get effective permissions (including overwrites)
+        if (typeof channel.permissionsFor === 'function') {
+          const permissions = channel.permissionsFor(botMember);
+          if (!permissions) {
+            this.logger('checkPermissions() - failed to get channel permissions', { guildId, channelId });
+            return false;
+          }
+
+          // Check for both CONNECT and SPEAK permissions
+          const hasConnect = permissions.has('CONNECT');
+          const hasSpeak = permissions.has('SPEAK');
+
+          if (!hasConnect) {
+            this.logger('checkPermissions() - missing CONNECT permission', { guildId, channelId });
+            return false;
+          }
+
+          if (!hasSpeak) {
+            this.logger('checkPermissions() - missing SPEAK permission', { guildId, channelId });
+            return false;
+          }
+
+          this.logger('checkPermissions() - all permissions granted', { guildId, channelId });
+          return true;
         }
       }
 
-      // Fallback: assume permissions exist if guild exists
-      return true;
+      // Fail closed: can't determine permissions, deny access
+      this.logger('checkPermissions() - could not determine permissions', { guildId, channelId });
+      return false;
     } catch (error) {
       // Log error for debugging
-      this.logger('Error checking permissions', { guildId, error: error instanceof Error ? error.message : String(error) });
-      // Fallback: deny if we can't check
+      this.logger('Error checking permissions', { guildId, channelId, error: error instanceof Error ? error.message : String(error) });
+      // Fail closed: deny if we can't check
       return false;
     }
   }

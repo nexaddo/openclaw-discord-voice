@@ -363,7 +363,7 @@ captureUserAudio(userId: string): AudioBuffer[] | null
 async playAudioStream(audioData: Buffer): Promise<void>
 encodeToOpus(pcmBuffer: Buffer): Buffer
 decodeFromOpus(opusBuffer: Buffer, ssrc?: number): Buffer
-getCapturBufferSize(): number
+getCaptureBufferSize(): number
 getPlaybackBufferSize(): number
 getPlaybackStatus(): PlaybackStatus
 getCaptureStats(): AudioStreamStats
