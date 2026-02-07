@@ -11,3 +11,4 @@ export {
   CircularAudioBuffer,
   JitterBuffer,
 } from './AudioStreamHandler.js';
+export { SpeechToText, VoiceActivityDetector } from './SpeechToText.js';
