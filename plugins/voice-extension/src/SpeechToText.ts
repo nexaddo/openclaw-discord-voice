@@ -478,7 +478,7 @@ export class SpeechToText {
       throw new Error('No accumulated frames to transcribe');
     }
 
-    // Combine frames
+    // Combine Opus frames
     const combinedSize = this.accumulatedFrames.reduce((sum, f) => sum + f.length, 0);
     const combined = Buffer.alloc(combinedSize);
     let offset = 0;
@@ -487,7 +487,9 @@ export class SpeechToText {
       offset += frame.length;
     }
 
-    const result = await this.transcribe(combined);
+    // Convert Opus to PCM before transcribing
+    const pcmBuffer = await this.convertOpusToPCM(combined);
+    const result = await this.transcribe(pcmBuffer);
     this.accumulatedFrames = [];
     return result;
   }
