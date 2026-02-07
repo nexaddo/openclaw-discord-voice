@@ -236,7 +236,7 @@ export interface AudioStreamConfig {
  * Audio Frame (input/output)
  */
 export interface AudioFrame {
-  timestamp: number;                // milliseconds (monotonic)
+  timestamp: number;                // RTP sample timestamp (not milliseconds)
   sequenceNumber: number;           // Frame counter
   ssrc: number;                     // Synchronization source (RTP)
   data: Float32Array;               // PCM audio data (48kHz, stereo)
