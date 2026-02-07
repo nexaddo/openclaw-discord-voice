@@ -344,14 +344,20 @@ export class SpeechToText {
 
     // Mock Whisper API call
     return new Promise((resolve, reject) => {
+      let finished = false;
+
       const timeout = setTimeout(() => {
+        finished = true;
         reject(new Error('Transcription timeout'));
       }, this.timeoutMs);
 
       // Simulate API latency (5-20ms for testing)
       const delay = Math.random() * 15 + 5;
       setTimeout(() => {
+        if (finished) return; // Prevent execution after timeout
+
         clearTimeout(timeout);
+        finished = true;
 
         const latency = Date.now() - startTime;
         this.latencies.push(latency);
@@ -419,18 +425,23 @@ export class SpeechToText {
       throw new Error('No accumulated frames to transcribe');
     }
 
-    // Combine Opus frames
-    const combinedSize = this.accumulatedFrames.reduce((sum, f) => sum + f.length, 0);
+    // Convert each Opus frame to PCM first
+    const pcmFrames: Buffer[] = [];
+    for (const opusFrame of this.accumulatedFrames) {
+      const pcmBuffer = await this.convertOpusToPCM(opusFrame);
+      pcmFrames.push(pcmBuffer);
+    }
+
+    // Combine PCM frames
+    const combinedSize = pcmFrames.reduce((sum, f) => sum + f.length, 0);
     const combined = Buffer.alloc(combinedSize);
     let offset = 0;
-    for (const frame of this.accumulatedFrames) {
+    for (const frame of pcmFrames) {
       frame.copy(combined, offset);
       offset += frame.length;
     }
 
-    // Convert Opus to PCM before transcribing
-    const pcmBuffer = await this.convertOpusToPCM(combined);
-    const result = await this.transcribe(pcmBuffer);
+    const result = await this.transcribe(combined);
     this.accumulatedFrames = [];
     return result;
   }
