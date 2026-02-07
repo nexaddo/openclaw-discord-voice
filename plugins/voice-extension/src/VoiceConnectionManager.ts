@@ -154,11 +154,11 @@ export class VoiceConnectionManager extends EventEmitter {
         throw error;
       }
 
-      // Validate guild and channel first (before state change)
+      // Validate guild and channel first (before any state updates)
       this.validateGuildAndChannel(guildId, channelId);
 
       // Check permissions
-      if (!this.checkPermissions(guildId, channelId)) {
+      if (!await this.checkPermissions(guildId, channelId)) {
         const error = new VoiceConnectionError(
           VoiceErrorType.NO_PERMISSION,
           `Bot lacks permission to connect to voice channel ${channelId} in guild ${guildId}`,
@@ -167,6 +167,28 @@ export class VoiceConnectionManager extends EventEmitter {
         this.tryEmitError(guildId, error);
         throw error;
       }
+
+      // Check if manager was destroyed during async permission check
+      if (this.destroyed) {
+        throw new Error('Manager was destroyed during connection setup');
+      }
+
+      // Create connection info BEFORE state updates (so updateConnectionState has data to work with)
+      const now = Date.now();
+      const info: VoiceConnectionInfo = {
+        guildId,
+        channelId,
+        userId: this.botClient.user?.id || 'bot-user-id',
+        state: {
+          status: ConnectionStateType.Signalling,
+          timestamp: now,
+          reason: 'Starting connection'
+        },
+        createdAt: now,
+        lastStatusChange: now,
+        rejoinAttempts: 0
+      };
+      this.connectionInfo.set(guildId, info);
 
       // Update state to Signalling
       this.updateConnectionState(guildId, ConnectionStateType.Signalling, 'Starting connection');
@@ -179,23 +201,6 @@ export class VoiceConnectionManager extends EventEmitter {
 
       // Store connection
       this.connections.set(guildId, connection);
-
-      // Create connection info
-      const now = Date.now();
-      const info: VoiceConnectionInfo = {
-        guildId,
-        channelId,
-        userId: this.botClient.user?.id || 'bot-user-id',
-        state: {
-          status: ConnectionStateType.Connecting,
-          timestamp: now,
-          reason: 'Voice connection in progress'
-        },
-        createdAt: now,
-        lastStatusChange: now,
-        rejoinAttempts: 0
-      };
-      this.connectionInfo.set(guildId, info);
 
       // Setup event listeners
       this.setupConnectionListeners(guildId, connection);
@@ -453,6 +458,17 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Creates a mock connection for testing
+   * NOTE: This is a simplified mock for Phase 2 testing. Phase 3 will use real
+   * @discordjs/voice VoiceConnection instances. The mock includes:
+   * - joinConfig: Configuration for joining the voice channel
+   * - state: Connection state with status code
+   * - destroy: Cleanup method
+   * - subscribe/unsubscribe: Audio stream handling
+   * - Event emitter methods for compatibility
+   * Real @discordjs/voice features not yet implemented:
+   * - Actual audio streaming
+   * - Real Discord voice protocol
+   * - State machine with proper event flow
    * @private
    */
   private createMockConnection(
@@ -460,21 +476,36 @@ export class VoiceConnectionManager extends EventEmitter {
     channelId: string,
     config?: Partial<JoinVoiceChannelConfig>
   ): VoiceConnection {
-    // Return a mock VoiceConnection object
+    // Return a mock VoiceConnection object that partially matches @discordjs/voice API
     return {
+      // Configuration for the connection
       joinConfig: {
         guildId,
         channelId,
         selfMute: config?.selfMute ?? true,
         selfDeaf: config?.selfDeaf ?? true
       },
+      // Voice state (status: 0 = idle/disconnected, 1 = connecting, 2 = connected)
       state: { status: 0 },
       status: 0,
-      destroy: () => {},
-      subscribe: () => ({ unsubscribe: () => {} }),
-      on: () => ({} as any),
-      emit: () => true,
-      removeAllListeners: () => ({} as any)
+      // Core connection methods
+      destroy: () => {
+        // In real implementation, would clean up resources
+      },
+      // Audio streaming interface
+      subscribe: (transform: any) => ({
+        unsubscribe: () => {}
+      }),
+      // Event emitter interface
+      on: (event: string, listener: any) => ({} as any),
+      once: (event: string, listener: any) => ({} as any),
+      emit: (event: string, ...args: any[]) => true,
+      removeListener: (event: string, listener: any) => ({} as any),
+      removeAllListeners: (event?: string) => ({} as any),
+      // Playback control (not implemented in Phase 2)
+      play: () => ({}),
+      pause: () => true,
+      resume: () => true
     } as any as VoiceConnection;
   }
 
@@ -503,6 +534,9 @@ export class VoiceConnectionManager extends EventEmitter {
   ): void {
     const info = this.connectionInfo.get(guildId);
     if (!info) {
+      if (this.options.debug) {
+        this.logger('updateConnectionState() called on non-existent connection', { guildId, status });
+      }
       return;
     }
 
@@ -610,18 +644,30 @@ export class VoiceConnectionManager extends EventEmitter {
    * Checks if bot has permission to connect and speak
    * @private
    */
-  private checkPermissions(guildId: string, channelId: string): boolean {
-    // Specific test cases
-    if (guildId === 'guild-no-perms') {
+  private async checkPermissions(guildId: string, channelId: string): Promise<boolean> {
+    try {
+      const guild = this.botClient.guilds?.get?.(guildId);
+      if (!guild) {
+        return false;
+      }
+
+      // Try to fetch the bot member's permissions
+      if (typeof guild.members?.fetchMe === 'function') {
+        const botMember = await guild.members.fetchMe();
+        if (botMember && typeof botMember.permissions?.has === 'function') {
+          // Check for CONNECT permission (bit 0x100000)
+          return botMember.permissions.has('CONNECT');
+        }
+      }
+
+      // Fallback: assume permissions exist if guild exists
+      return true;
+    } catch (error) {
+      // Log error for debugging
+      this.logger('Error checking permissions', { guildId, error: error instanceof Error ? error.message : String(error) });
+      // Fallback: deny if we can't check
       return false;
     }
-
-    const guild = this.botClient.guilds?.get?.(guildId);
-    if (!guild) {
-      return false;
-    }
-
-    return true;
   }
 
   /**
