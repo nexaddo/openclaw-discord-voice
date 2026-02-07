@@ -1,1615 +1,606 @@
-# Phase 3 Plan: Audio Stream Handler Implementation
+# Phase 3: Audio Stream Handler — Technical Specification
 
-**Date:** 2026-02-07 19:54 EST  
-**Agent:** Voice Integration Planning Agent (Phase 3)  
-**Phase:** 3/8  
-**Status:** Planning Complete - Ready for Implementation  
-**Duration Estimate:** 2.5-3.5 hours (including comprehensive tests)
-
----
-
-## Executive Summary
-
-Phase 3 implements the **AudioStreamHandler** class, which is the critical bridge between Discord voice streams and audio processing. This class handles:
-- Real-time audio capture from Discord voice channels
-- Audio playback to Discord voice channels
-- Audio packet buffering and jitter management
-- Opus codec encoding/decoding
-- Audio frame management
-
-**Key Components:**
-- `AudioStreamHandler` class with stream lifecycle management
-- Audio buffer management with circular buffer pattern
-- Opus encoder/decoder integration
-- Type definitions for audio data structures
-- Comprehensive test suite (TDD approach)
-
-**Critical Success Criteria:**
-- Capture user voice data from Discord streams
-- Play audio back to Discord voice channels
-- Handle opus encoding/decoding correctly
-- Manage buffer overflow without data loss
-- Support 48kHz sample rate, stereo audio
-- Handle concurrent streams from multiple users
+**Status:** Planning Complete  
+**Created:** 2026-02-06  
+**Phase:** 3 of 4  
+**Focus:** Audio capture, buffering, Opus codec handling, playback
 
 ---
 
-## Part 1: Audio Stream Architecture
+## 1. Overview
 
-### Audio Flow Overview
-
-```
-INBOUND FLOW:
-┌─────────────────────┐
-│ Discord Voice       │
-│ Connection          │
-│                     │
-│ (encrypted, opus)   │
-└──────────┬──────────┘
-           │
-           ├─ Decrypt packet
-           ├─ Decode Opus → PCM
-           │
-           ▼
-┌──────────────────────┐
-│ AudioStreamHandler   │
-│                      │
-│ - Audio buffer       │
-│ - Jitter buffer      │
-│ - Sample rate conv   │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Application Layer    │
-│ (STT, Processing)    │
-└──────────────────────┘
-
-OUTBOUND FLOW:
-┌─────────────────────┐
-│ Audio Source        │
-│ (TTS, Audio file)   │
-└──────────┬──────────┘
-           │
-           ├─ Convert to PCM
-           ├─ Sample rate conv
-           │
-           ▼
-┌──────────────────────┐
-│ AudioStreamHandler   │
-│                      │
-│ - Playback buffer    │
-│ - Frame management   │
-│ - Silence insertion  │
-└──────────┬───────────┘
-           │
-           ├─ Encode PCM → Opus
-           ├─ Encrypt packet
-           │
-           ▼
-┌─────────────────────┐
-│ Discord Voice       │
-│ Connection          │
-│                     │
-│ (send packet)       │
-└─────────────────────┘
-```
-
-### Audio Specifications
-
-Discord voice uses standardized audio parameters:
-
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| Sample Rate | 48,000 Hz | Strictly enforced |
-| Channels | 2 (stereo) | Always stereo |
-| Sample Format | PCM int16 | Little-endian |
-| Frame Size | 20 ms | 960 samples @ 48kHz |
-| Frame Duration | 20 ms | Consistent timing |
-| Opus Bitrate | 32-128 kbps | Auto-adjusts |
-| Packet Rate | 50 packets/sec | One packet per 20ms |
-
-### Buffer Specifications
-
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| PCM Frame Size | 3,840 bytes | 960 samples × 2 channels × 2 bytes |
-| Jitter Buffer | 200ms (10 frames) | Handles network jitter |
-| Playback Buffer | 500ms (25 frames) | Smooth playback |
-| Opus Frame Size | 20-60 bytes | After compression |
-| Max Buffer Age | 1 second | Drop frames older than 1s |
+The **AudioStreamHandler** manages audio I/O for Discord voice connections. It handles:
+- Audio frame capture from local sources
+- Jitter buffer management (incoming frames)
+- Circular buffer for frame storage
+- Opus encoding/decoding (48kHz, stereo, 960-sample frames)
+- Playback queue management
+- Error tracking and recovery
 
 ---
 
-## Part 2: AudioStreamHandler Class Design
+## 2. AudioStreamHandler Class Design
 
-### Class Structure Overview
+### 2.1 Class Definition
 
 ```typescript
-export class AudioStreamHandler {
-  // ========== Properties ==========
-  
-  // Connection management
-  private voiceConnection: VoiceConnection;
-  private guildId: string;
-  
-  // Audio capture (inbound)
-  private captureBuffer: CircularBuffer<AudioFrame>;
-  private userAudioStreams: Map<string, UserAudioStream>;
-  
-  // Audio playback (outbound)
-  private playbackBuffer: CircularBuffer<AudioFrame>;
-  private audioPlayer: AudioPlayer | null;
-  
-  // Opus codec
-  private opusEncoder: OpusEncoder;
-  private opusDecoders: Map<number, OpusDecoder>;
-  
-  // State management
-  private isCapturing: boolean;
-  private isPlaying: boolean;
-  private listeners: Set<AudioStreamListener>;
-  
-  // Metrics
-  private captureStats: AudioStreamStats;
-  private playbackStats: AudioStreamStats;
-  
-  // ========== Methods ==========
-  
-  // Initialization
-  constructor(connection: VoiceConnection, guildId: string)
-  async initialize(): Promise<void>
-  async destroy(): Promise<void>
-  
-  // Audio capture
-  async startCapture(): Promise<void>
-  async stopCapture(): Promise<void>
-  captureUserAudio(userId: string): AudioBuffer[] | null
-  getUserAudioStream(userId: string): ReadableStream<AudioFrame> | null
-  getAllActiveUsers(): string[]
-  
-  // Audio playback
-  async playAudioStream(audioData: Buffer): Promise<void>
-  async playAudioFrames(frames: AudioFrame[]): Promise<void>
-  async stopPlayback(): Promise<void>
-  getPlaybackStatus(): PlaybackStatus
-  
-  // Audio encoding/decoding
-  encodeToOpus(pcmBuffer: Buffer): Buffer
-  decodeFromOpus(opusBuffer: Buffer, ssrc?: number): Buffer
-  
-  // Buffer management
-  getCaptureBuff erSize(): number
-  getPlaybackBufferSize(): number
-  private handleBufferOverflow(): void
-  private trimOldFrames(): void
-  
-  // Listeners
-  addEventListener(listener: AudioStreamListener): void
-  removeEventListener(listener: AudioStreamListener): void
-  
-  // Statistics
-  getCaptureStats(): AudioStreamStats
-  getPlaybackStats(): AudioStreamStats
+class AudioStreamHandler {
+  // Constructor
+  constructor(config: AudioStreamConfig)
+
+  // Lifecycle
+  initialize(): Promise<void>
+  shutdown(): Promise<void>
+  reset(): void
+
+  // Audio Input (Capture)
+  captureFrame(buffer: Float32Array): Promise<void>
+  startCapture(): Promise<void>
+  stopCapture(): Promise<void>
+
+  // Audio Output (Playback)
+  playFrame(audioBuffer: AudioBuffer): Promise<void>
+  startPlayback(): Promise<void>
+  stopPlayback(): Promise<void>
+  getPlaybackQueue(): AudioFrame[]
+
+  // Opus Encoding
+  encodeFrame(pcmData: Float32Array): Promise<Uint8Array>
+  encodeFrameBatch(frames: Float32Array[]): Promise<Uint8Array[]>
+
+  // Opus Decoding
+  decodeFrame(opusData: Uint8Array): Promise<Float32Array>
+  decodeFrameBatch(frames: Uint8Array[]): Promise<Float32Array[]>
+
+  // Jitter Buffer Management
+  enqueuFrame(frame: AudioFrame): void
+  dequeueFrame(): AudioFrame | null
+  getBufferHealth(): BufferHealth
+  flushBuffer(): void
+
+  // Statistics & Monitoring
+  getStats(): AudioStreamStats
   resetStats(): void
+  getLatency(): number
+  getBufferOccupancy(): number
+
+  // Error Handling
+  onError(callback: ErrorHandler): void
+  clearErrorCallbacks(): void
+  getLastError(): AudioStreamError | null
 }
 ```
 
-### Type Definitions
+### 2.2 Configuration Interface
 
 ```typescript
-// ============================================
-// Audio Frame & Buffer Types
-// ============================================
-
-/**
- * Represents a single audio frame (20ms of audio at 48kHz)
- */
-export interface AudioFrame {
-  // PCM audio data
-  data: Buffer;                    // 3,840 bytes (960 samples × 2 channels × 2 bytes)
-  
-  // Metadata
-  sampleRate: number;              // 48000
-  channels: number;                // 2
-  sampleCount: number;             // 960
-  
-  // Timing
-  timestamp: number;               // ms since epoch
-  sequenceNumber?: number;          // RTP sequence for out-of-order detection
-  ssrc?: number;                   // Synchronization source (user ID)
-  
-  // Flags
-  isSilence: boolean;              // True if frame is silence
-  isJitter: boolean;               // True if frame from jitter buffer
-  playoutDelay?: number;           // Milliseconds to delay playback
-}
-
-/**
- * Represents audio data with Opus encoding
- */
-export interface OpusFrame {
-  // Encoded data
-  data: Buffer;                    // 20-60 bytes (compressed)
-  
-  // Metadata
-  frameSize: number;               // Bytes
-  timestamp: number;               // ms since epoch
-  sequenceNumber: number;          // RTP sequence
-  ssrc: number;                    // User/source ID
-  
-  // Flags
-  isSilence: boolean;
-  markerBit?: boolean;             // RTP marker for speech start
-}
-
-/**
- * User-specific audio stream
- */
-export interface UserAudioStream {
-  userId: string;
-  ssrc: number;
-  audioBuffer: AudioFrame[];
-  lastFrameTime: number;
-  isActive: boolean;
-  decoderState: any;               // Decoder instance for this user
-}
-
-/**
- * Playback status information
- */
-export interface PlaybackStatus {
-  isPlaying: boolean;
-  bufferSize: number;
-  bufferedDuration: number;        // milliseconds
-  framesQueued: number;
-  framesPlayed: number;
-  estimatedPlaybackTime: number;   // ms until queue empty
-}
-
-/**
- * Audio stream statistics
- */
-export interface AudioStreamStats {
-  framesProcessed: number;
-  framesDropped: number;
-  bufferOverflows: number;
-  averageLatency: number;          // milliseconds
-  minLatency: number;
-  maxLatency: number;
-  cpuUsage: number;                // percentage
-  lastUpdated: number;
-}
-
-/**
- * Audio stream event listener
- */
-export interface AudioStreamListener {
-  onFrameCaptured?(frame: AudioFrame): void;
-  onFrameDropped?(frame: AudioFrame, reason: string): void;
-  onUserStartedSpeaking?(userId: string): void;
-  onUserStoppedSpeaking?(userId: string): void;
-  onPlaybackBufferLow?(): void;
-  onPlaybackBufferFull?(): void;
-  onError?(error: AudioStreamError): void;
-}
-
-/**
- * Audio stream error types
- */
-export enum AudioStreamErrorType {
-  BUFFER_OVERFLOW = 'BUFFER_OVERFLOW',
-  BUFFER_UNDERFLOW = 'BUFFER_UNDERFLOW',
-  OPUS_ENCODING_ERROR = 'OPUS_ENCODING_ERROR',
-  OPUS_DECODING_ERROR = 'OPUS_DECODING_ERROR',
-  STREAM_DISCONNECTED = 'STREAM_DISCONNECTED',
-  INVALID_AUDIO_DATA = 'INVALID_AUDIO_DATA',
-  PLAYBACK_ERROR = 'PLAYBACK_ERROR',
-  CAPTURE_ERROR = 'CAPTURE_ERROR'
-}
-
-/**
- * Audio stream error class
- */
-export class AudioStreamError extends Error {
-  type: AudioStreamErrorType;
-  guildId?: string;
-  userId?: string;
-  originalError?: Error;
-  timestamp: number;
-
-  constructor(
-    type: AudioStreamErrorType,
-    message: string,
-    options?: {
-      guildId?: string;
-      userId?: string;
-      originalError?: Error;
-    }
-  ) {
-    super(message);
-    this.name = 'AudioStreamError';
-    this.type = type;
-    this.guildId = options?.guildId;
-    this.userId = options?.userId;
-    this.originalError = options?.originalError;
-    this.timestamp = Date.now();
-  }
-}
-
-/**
- * Circular buffer for audio frames
- * Automatically overwrites oldest frames when full
- */
-export class CircularBuffer<T> {
-  private buffer: T[] = [];
-  private maxSize: number;
-  private writeIndex: number = 0;
-  private readIndex: number = 0;
-  private frameCount: number = 0;
-
-  constructor(maxSizeFrames: number) {
-    this.maxSize = maxSizeFrames;
-    this.buffer = new Array(maxSizeFrames);
-  }
-
-  push(frame: T): void {
-    this.buffer[this.writeIndex] = frame;
-    this.writeIndex = (this.writeIndex + 1) % this.maxSize;
-    
-    if (this.frameCount < this.maxSize) {
-      this.frameCount++;
-    } else {
-      this.readIndex = (this.readIndex + 1) % this.maxSize;
-    }
-  }
-
-  pop(): T | null {
-    if (this.frameCount === 0) return null;
-    
-    const frame = this.buffer[this.readIndex];
-    this.readIndex = (this.readIndex + 1) % this.maxSize;
-    this.frameCount--;
-    
-    return frame;
-  }
-
-  peek(offset: number = 0): T | null {
-    if (offset >= this.frameCount) return null;
-    
-    const index = (this.readIndex + offset) % this.maxSize;
-    return this.buffer[index];
-  }
-
-  clear(): void {
-    this.frameCount = 0;
-    this.writeIndex = 0;
-    this.readIndex = 0;
-  }
-
-  getSize(): number {
-    return this.frameCount;
-  }
-
-  isFull(): boolean {
-    return this.frameCount === this.maxSize;
-  }
-
-  isEmpty(): boolean {
-    return this.frameCount === 0;
-  }
-
-  toArray(): T[] {
-    const result: T[] = [];
-    for (let i = 0; i < this.frameCount; i++) {
-      const index = (this.readIndex + i) % this.maxSize;
-      result.push(this.buffer[index]);
-    }
-    return result;
-  }
-}
-
-/**
- * Options for AudioStreamHandler initialization
- */
-export interface AudioStreamHandlerOptions {
-  // Buffer sizes (in frames)
-  captureBufferSize?: number;      // Default: 10 (200ms)
-  playbackBufferSize?: number;     // Default: 25 (500ms)
-  jitterBufferSize?: number;       // Default: 10 (200ms)
-  
+interface AudioStreamConfig {
   // Audio parameters
-  sampleRate?: number;             // Default: 48000
-  channels?: number;               // Default: 2
-  
-  // Opus parameters
-  opusBitrate?: number;            // Default: 64000 (64 kbps)
-  opusComplexity?: number;         // Default: 9 (0-10, higher = better quality)
-  
-  // Timing
-  maxFrameAge?: number;            // Default: 1000 (drop frames older than 1s)
-  playoutDelay?: number;           // Default: 20 (ms)
-  
-  // Features
-  enableSilenceDetection?: boolean; // Default: true
-  enableVAD?: boolean;             // Default: true (Voice Activity Detection)
-  
-  // Logging
-  debug?: boolean;                 // Default: false
+  sampleRate: number              // 48000 Hz (required)
+  channels: number                // 2 (stereo) or 1 (mono)
+  frameSize: number               // 960 samples per frame (20ms @ 48kHz)
+  bitRate: number                 // 128000 (128 kbps, default)
+
+  // Buffer configuration
+  jitterBufferSize: number        // 5-20 frames
+  circularBufferCapacity: number  // 100 frames (max storage)
+  targetBufferLatency: number     // ms, default 40
+
+  // Codec settings
+  opusComplexity: number          // 0-10, default 5
+  useFEC: boolean                 // Forward Error Correction
+  useDTX: boolean                 // Discontinuous Transmission
+  maxPlaybackRate: number         // 48000 (Hz)
+
+  // Device configuration
+  inputDeviceId?: string          // Audio input device
+  outputDeviceId?: string         // Audio output device
+  echoCancel?: boolean            // Echo cancellation
+  noiseSuppression?: boolean      // Noise suppression
+
+  // Error handling
+  maxRetries: number              // Default 3
+  timeoutMs: number               // Default 5000
+  enableMetrics: boolean          // Track latency, quality
+}
+```
+
+### 2.3 Core Data Structures
+
+```typescript
+// Audio Frame (input/output)
+interface AudioFrame {
+  timestamp: number               // milliseconds (monotonic)
+  sequenceNumber: number          // Frame counter
+  ssrc: number                    // Synchronization source (RTP)
+  data: Float32Array              // PCM audio data (48kHz, stereo)
+  sampleCount: number             // 960 samples typical
+  duration: number                // 20 ms typical
 }
 
-export interface AudioStreamHandlerEvents {
-  frameCaptured(frame: AudioFrame): void;
-  frameDropped(reason: string): void;
-  userStartedSpeaking(userId: string): void;
-  userStoppedSpeaking(userId: string): void;
-  playbackBufferLow(): void;
-  playbackBufferFull(): void;
-  error(error: AudioStreamError): void;
+// Opus-encoded frame
+interface OpusFrame {
+  timestamp: number
+  sequenceNumber: number
+  ssrc: number
+  data: Uint8Array                // Opus-encoded bytes
+  size: number                    // Byte length
+}
+
+// Jitter buffer metadata
+interface JitterBufferFrame {
+  frame: AudioFrame
+  arrivalTime: number             // When frame arrived
+  playoutTime: number             // When to play
+  isPlayed: boolean
+}
+
+// Statistics
+interface AudioStreamStats {
+  framesProcessed: number
+  framesEncoded: number
+  framesDecoded: number
+  framesDropped: number
+  frameLoss: number               // Percentage
+  jitterMs: number                // Buffer jitter
+  latencyMs: number               // End-to-end
+  bufferOccupancy: number         // Frames in buffer
+  captureUnderrun: number         // Underrun events
+  playbackUnderrun: number        // Underrun events
+  cpuUsage: number                // Estimated %
+  codecQuality: number            // 0-100
+}
+
+// Buffer health status
+interface BufferHealth {
+  occupancy: number               // Current frame count
+  capacity: number                // Max capacity
+  percentFull: number             // 0-100
+  isUnderrun: boolean             // < 2 frames
+  isOverrun: boolean              // > 90% full
+  jitter: number                  // ms
+  recommendation: string          // "optimal" | "low" | "high" | "critical"
+}
+
+// Error handling
+interface AudioStreamError {
+  code: AudioErrorCode
+  message: string
+  timestamp: number
+  context?: Record<string, any>
+  recoverable: boolean
+  retryCount: number
+}
+
+enum AudioErrorCode {
+  // Codec errors
+  OPUS_ENCODE_FAILED = 1001,
+  OPUS_DECODE_FAILED = 1002,
+  INVALID_FRAME_SIZE = 1003,
+  SAMPLE_RATE_MISMATCH = 1004,
+
+  // Buffer errors
+  BUFFER_OVERFLOW = 2001,
+  BUFFER_UNDERRUN = 2002,
+  JITTER_BUFFER_FULL = 2003,
+  INVALID_FRAME_TIMESTAMP = 2004,
+
+  // Device errors
+  CAPTURE_DEVICE_FAILED = 3001,
+  PLAYBACK_DEVICE_FAILED = 3002,
+  DEVICE_NOT_FOUND = 3003,
+
+  // Resource errors
+  MEMORY_ALLOCATION_FAILED = 4001,
+  ENCODER_UNAVAILABLE = 4002,
+  DECODER_UNAVAILABLE = 4003,
+
+  // State errors
+  INVALID_STATE = 5001,
+  NOT_INITIALIZED = 5002,
+  ALREADY_INITIALIZED = 5003,
 }
 ```
 
 ---
 
-## Part 3: Audio Buffer Management Strategy
+## 3. Audio Buffer Management
 
-### Circular Buffer Pattern
+### 3.1 Jitter Buffer (JitterBuffer Class)
 
-The `CircularBuffer<T>` class implements a fixed-size, automatically-wrapping buffer:
-
-```typescript
-// Example: 10-frame jitter buffer (200ms at 50 fps)
-const jitterBuffer = new CircularBuffer<AudioFrame>(10);
-
-// When buffer has 10 frames and new frame arrives:
-// Old frame automatically overwritten (FIFO)
-jitterBuffer.push(newFrame);  // Oldest frame is lost
-```
-
-**Advantages:**
-- Predictable memory usage (no dynamic allocation)
-- O(1) push/pop operations
-- Automatic overflow handling
-- No garbage collection overhead
-
-**Disadvantages:**
-- Fixed size (must estimate max delay)
-- Oldest data lost on overflow
-- Can't grow dynamically
-
-### Three-Buffer Strategy
-
-1. **Jitter Buffer (Capture Side)**
-   - Size: 200ms (10 frames)
-   - Purpose: Smooth out network jitter
-   - Behavior: Drop oldest frames if new ones arrive
-   - Use: Internal only, feeds to main capture buffer
-
-2. **Capture Buffer**
-   - Size: 200-500ms configurable
-   - Purpose: Hold captured audio until consumed
-   - Behavior: Notify listeners when frames available
-   - Use: Public API for accessing captured audio
-
-3. **Playback Buffer**
-   - Size: 500-1000ms configurable
-   - Purpose: Queue audio frames for playback
-   - Behavior: Feed frames to audio player
-   - Use: Internal player feeding
-
-### Buffer Overflow Handling
-
-When capture buffer reaches 90% full:
-
-```
-1. Emit 'bufferOverflow' event
-2. Call onFrameDropped listeners
-3. Drop oldest 50ms (2-3 frames)
-4. Log warning if debug enabled
-5. Update statistics
-```
-
-When playback buffer runs empty:
-
-```
-1. Emit 'bufferUnderflow' event
-2. Call onPlaybackBufferLow listener
-3. Insert silence frame (20ms)
-4. Pause player until buffer refilled
-5. Resume when buffer > 100ms
-```
-
-### Frame Age Trimming
-
-Every 100ms, check and discard old frames:
+**Purpose:** Absorb timing variations in incoming frames, smooth playback.
 
 ```typescript
-private trimOldFrames(): void {
-  const now = Date.now();
-  const maxAge = this.options.maxFrameAge || 1000;
-  
-  const frames = this.captureBuffer.toArray();
-  let trimmedCount = 0;
-  
-  for (const frame of frames) {
-    if (now - frame.timestamp > maxAge) {
-      this.captureBuffer.pop();
-      trimmedCount++;
-    }
-  }
-  
-  if (trimmedCount > 0) {
-    this.captureStats.framesDropped += trimmedCount;
-    this.emit('frameDropped', `Aged out: ${trimmedCount} frames`);
+class JitterBuffer {
+  constructor(
+    maxFrames: number,
+    targetLatency: number,
+    sampleRate: number
+  )
+
+  // Operations
+  enqueue(frame: AudioFrame): void
+  dequeue(): AudioFrame | null
+  peek(): AudioFrame | null
+  flush(): void
+
+  // Diagnostics
+  getHealth(): BufferHealth
+  getOccupancy(): number
+  getJitter(): number
+  hasUnderrun(): boolean
+  hasOverrun(): boolean
+
+  // Adaptive management
+  adjustTargetLatency(direction: 'increase' | 'decrease'): void
+  getRecommendedLatency(): number
+}
+```
+
+**Algorithm:**
+1. Frames arrive with RTP timestamp (not wall-clock time)
+2. Map RTP timestamp to playout time using target latency
+3. Store frames in priority queue (sorted by playout time)
+4. Dequeue when playout time ≤ current time
+5. Drop late frames (timestamp < current playout)
+6. Adapt latency if jitter increases
+
+### 3.2 Circular Buffer (CircularAudioBuffer Class)
+
+**Purpose:** Efficient storage for PCM audio frames (20ms chunks).
+
+```typescript
+class CircularAudioBuffer {
+  constructor(capacity: number, frameSize: number)
+
+  // Write operations
+  writeFrame(frame: AudioFrame): void
+  write(samples: Float32Array): number  // Returns bytes written
+
+  // Read operations
+  readFrame(): AudioFrame | null
+  read(sampleCount: number): Float32Array | null
+  peek(): AudioFrame | null
+
+  // State
+  getOccupancy(): number
+  getCapacity(): number
+  isEmpty(): boolean
+  isFull(): boolean
+  reset(): void
+
+  // Diagnostics
+  getStats(): {
+    totalWritten: number
+    totalRead: number
+    overflow: number
+    underrun: number
   }
 }
+```
+
+**Implementation Notes:**
+- Use typed array for efficiency (Float32Array for stereo interleaved)
+- Write head and read head with wrap-around
+- Pre-allocate memory to prevent GC pauses
+- Track high-water mark for diagnostics
+
+### 3.3 Buffer Layout
+
+```
+Circular Buffer Layout (100 frames × 960 samples):
+
+[Frame0][Frame1][Frame2]...[Frame99][Frame0 next][...]
+ ↑                                      ↑
+ Read Head                              Write Head
+ (playback)                             (capture)
+
+Each frame = 960 samples × 2 channels × 4 bytes (float32)
+         = 7,680 bytes per frame
+Circular capacity = 100 frames × 7,680 = 768 KB
 ```
 
 ---
 
-## Part 4: Opus Codec Implementation
+## 4. Opus Codec Handling
 
-### Opus Encoder
+### 4.1 Opus Encoder
 
 ```typescript
-import OpusEncoder from '@discordjs/opus';
+class OpusEncoder {
+  constructor(
+    sampleRate: number,           // 48000
+    channels: number,             // 1 or 2
+    complexity: number,           // 0-10
+    useFEC: boolean,
+    useDTX: boolean
+  )
 
-/**
- * Encodes PCM audio to Opus format
- * 
- * @param pcmBuffer - PCM int16 audio (3,840 bytes for 20ms frame)
- * @returns Opus encoded data (typically 20-60 bytes)
- * 
- * @throws AudioStreamError if encoding fails
- */
-private createOpusEncoder(): OpusEncoder {
-  try {
-    // Discord requires exactly these parameters:
-    // - Sample rate: 48,000 Hz
-    // - Channels: 2 (stereo)
-    // - Frame size: 960 samples (20ms @ 48kHz, Discord-compatible)
-    const encoder = new OpusEncoder.Encoder(
-      48000,           // sample rate
-      2,               // channels
-      960              // frame size in samples (20ms @ 48kHz)
-    );
-    
-    // Optional: Set bitrate
-    if (this.options.opusBitrate) {
-      encoder.setBitrate(this.options.opusBitrate);
-    }
-    
-    return encoder;
-  } catch (error: any) {
-    throw new AudioStreamError(
-      AudioStreamErrorType.OPUS_ENCODING_ERROR,
-      `Failed to create Opus encoder: ${error.message}`,
-      { originalError: error }
-    );
-  }
-}
+  encode(pcmData: Float32Array): Uint8Array
+  encodeFrame(frame: AudioFrame): OpusFrame
+  encodeBatch(frames: Float32Array[]): Uint8Array[]
 
-encodeToOpus(pcmBuffer: Buffer): Buffer {
-  if (!pcmBuffer || pcmBuffer.length !== 3840) {
-    throw new AudioStreamError(
-      AudioStreamErrorType.INVALID_AUDIO_DATA,
-      `Invalid PCM buffer size: expected 3840, got ${pcmBuffer.length}`
-    );
-  }
-  
-  try {
-    const opusData = this.opusEncoder.encode(pcmBuffer);
-    
-    if (!opusData || opusData.length === 0) {
-      throw new Error('Encoder returned empty buffer');
-    }
-    
-    this.captureStats.framesProcessed++;
-    return opusData;
-  } catch (error: any) {
-    this.captureStats.framesDropped++;
-    
-    throw new AudioStreamError(
-      AudioStreamErrorType.OPUS_ENCODING_ERROR,
-      `Failed to encode Opus frame: ${error.message}`,
-      { originalError: error }
-    );
-  }
+  // Configuration
+  setBitRate(bitRate: number): void
+  setComplexity(level: number): void
+  getFrameSize(): number
+  getMaxFrameSize(): number
+
+  // Cleanup
+  destroy(): void
 }
 ```
 
-### Opus Decoder
+**Frame Format:**
+- Input: 960 samples (20ms @ 48kHz) × 2 channels = Float32Array(1920)
+- Output: Variable-length Opus packet, typically 20-60 bytes
+- Opus defaults to 128 kbps for stereo
+
+### 4.2 Opus Decoder
 
 ```typescript
-import OpusDecoder from '@discordjs/opus';
+class OpusDecoder {
+  constructor(
+    sampleRate: number,           // 48000
+    channels: number              // 1 or 2
+  )
 
-/**
- * Decodes Opus audio back to PCM format
- * 
- * @param opusBuffer - Opus encoded data
- * @param ssrc - Synchronization source (user ID) for decoder selection
- * @returns PCM audio (3,840 bytes)
- * 
- * @throws AudioStreamError if decoding fails
- */
-private getOrCreateDecoder(ssrc: number): OpusDecoder {
-  if (!this.opusDecoders.has(ssrc)) {
-    try {
-      const decoder = new OpusDecoder.Decoder(
-        48000,           // sample rate
-        2,               // channels
-        960              // frame size (20ms, same as encoder)
-      );
-      
-      this.opusDecoders.set(ssrc, decoder);
-    } catch (error: any) {
-      throw new AudioStreamError(
-        AudioStreamErrorType.OPUS_DECODING_ERROR,
-        `Failed to create Opus decoder for SSRC ${ssrc}: ${error.message}`,
-        { originalError: error }
-      );
-    }
-  }
-  
-  return this.opusDecoders.get(ssrc)!;
-}
+  decode(opusData: Uint8Array): Float32Array
+  decodeFrame(frame: OpusFrame): AudioFrame
+  decodeBatch(frames: Uint8Array[]): Float32Array[]
+  decodeLoss(frameSizeMs: number): Float32Array  // PLC
 
-decodeFromOpus(opusBuffer: Buffer, ssrc?: number): Buffer {
-  if (!opusBuffer || opusBuffer.length === 0) {
-    throw new AudioStreamError(
-      AudioStreamErrorType.INVALID_AUDIO_DATA,
-      'Empty opus buffer provided'
-    );
-  }
-  
-  const decoderSsrc = ssrc || 0;
-  
-  try {
-    const decoder = this.getOrCreateDecoder(decoderSsrc);
-    const pcmData = decoder.decode(opusBuffer);
-    
-    if (!pcmData || pcmData.length === 0) {
-      throw new Error('Decoder returned empty buffer');
-    }
-    
-    if (pcmData.length !== 3840) {
-      console.warn(
-        `Opus decoder returned unexpected size: ${pcmData.length} (expected 3840)`
-      );
-    }
-    
-    this.captureStats.framesProcessed++;
-    return pcmData;
-  } catch (error: any) {
-    this.captureStats.framesDropped++;
-    
-    throw new AudioStreamError(
-      AudioStreamErrorType.OPUS_DECODING_ERROR,
-      `Failed to decode Opus frame: ${error.message}`,
-      { originalError: error }
-    );
-  }
+  // State
+  getLastDecodedFrame(): AudioFrame | null
+  getFrameSize(): number
+
+  // Cleanup
+  destroy(): void
 }
 ```
 
-### Key Opus Parameters
+**Packet Loss Concealment (PLC):**
+- When packet missing, generate synthetic audio (silence + comfort noise)
+- Request frame size (20ms): 960 samples
+- Decoder fills with algorithm-generated audio to maintain continuity
 
-| Parameter | Value | Reason |
-|-----------|-------|--------|
-| Sample Rate | 48,000 Hz | Discord standard (strictly enforced) |
-| Channels | 2 | Stereo (always) |
-| Frame Size | 960 | 20ms @ 48kHz (Discord-compatible audio frames) |
-| Bitrate | 64,000 bps | High quality, moderate compression |
-| Complexity | 9 | Slow encoder, best quality |
-| DTX | Enabled | Discontinuous Transmission (send silence as 1 byte) |
-| FEC | Enabled | Forward Error Correction |
+### 4.3 Audio Frame Specifications
+
+| Property | Value | Notes |
+|----------|-------|-------|
+| Sample Rate | 48,000 Hz | Discord standard |
+| Channels | 2 (stereo) | Can downmix to mono |
+| Frame Size | 960 samples | 20ms duration |
+| Bit Depth | 32-bit float | PCM range: -1.0 to +1.0 |
+| Bitrate | 128 kbps | Opus VBR, adjustable |
+| Frame Duration | 20 ms | Fixed @ 48kHz |
+| Frames per second | 50 | (1000 / 20) |
 
 ---
 
-## Part 5: Test Cases
+## 5. Integration with Phase 2 VoiceConnectionManager
 
-### Test Suite Overview
+### 5.1 Architecture Flow
 
-Total: **48 test cases** organized into 8 sections
-
-### A. Constructor & Initialization (6 tests)
-
-```typescript
-describe('AudioStreamHandler - Constructor & Initialization', () => {
-  it('should create instance with valid VoiceConnection', () => {
-    // Test: new AudioStreamHandler(connection, guildId)
-  });
-
-  it('should throw on invalid VoiceConnection', () => {
-    // Test: throws AudioStreamError
-  });
-
-  it('should initialize buffers with default options', () => {
-    // Test: default sizes, sample rate, channels
-  });
-
-  it('should initialize buffers with custom options', () => {
-    // Test: custom capture/playback buffer sizes
-  });
-
-  it('should initialize Opus encoder', () => {
-    // Test: encoder is ready for encoding
-  });
-
-  it('should initialize empty decoder map', () => {
-    // Test: opusDecoders map is empty
-  });
-});
+```
+VoiceConnectionManager (Phase 2)
+        ↓
+        ├─ VoiceSocket (RTP/UDP)
+        │   ├─ recv RTP packets → AudioStreamHandler.decodeFrame()
+        │   └─ send RTP packets ← AudioStreamHandler.encodeFrame()
+        │
+        ├─ AudioStreamHandler (Phase 3)
+        │   ├─ Capture local audio → encode → send to VoiceSocket
+        │   ├─ Receive Opus → decode → playback
+        │   └─ Manage jitter buffer + circular buffer
+        │
+        └─ VoiceState (RTP metadata)
+            └─ SSRC, sequence, timestamp
 ```
 
-### B. Audio Capture (10 tests)
+### 5.2 Method Integration
 
+**Sending Audio (Capture → Encode → Send):**
 ```typescript
-describe('AudioStreamHandler - Audio Capture', () => {
-  it('should start capture without errors', async () => {
-    // Test: startCapture() succeeds
-  });
-
-  it('should emit frameCaptured event on new frame', () => {
-    // Test: listener receives frame event
-  });
-
-  it('should store frames in capture buffer', () => {
-    // Test: captureUserAudio() returns frames
-  });
-
-  it('should handle multiple users simultaneously', () => {
-    // Test: capture from 3+ users without conflict
-  });
-
-  it('should drop old frames after max age', () => {
-    // Test: frames older than 1s are removed
-  });
-
-  it('should detect silence frames', () => {
-    // Test: isSilence flag set correctly
-  });
-
-  it('should handle capture buffer overflow', () => {
-    // Test: drop oldest frames, emit event
-  });
-
-  it('should track capture statistics', () => {
-    // Test: framesProcessed, framesDropped updated
-  });
-
-  it('should stop capture gracefully', async () => {
-    // Test: stopCapture() succeeds
-  });
-
-  it('should return null for inactive user', () => {
-    // Test: getUserAudioStream(unknownUserId) returns null
-  });
-});
-```
-
-### C. Audio Playback (10 tests)
-
-```typescript
-describe('AudioStreamHandler - Audio Playback', () => {
-  it('should queue audio buffer for playback', async () => {
-    // Test: playAudioStream(buffer) succeeds
-  });
-
-  it('should accept PCM audio data', async () => {
-    // Test: playback of PCM frames
-  });
-
-  it('should queue multiple frames correctly', async () => {
-    // Test: playAudioFrames([...frames])
-  });
-
-  it('should maintain playback buffer size limits', () => {
-    // Test: buffer doesn't exceed maxSize
-  });
-
-  it('should emit playbackBufferLow when < 100ms', () => {
-    // Test: listener receives low buffer warning
-  });
-
-  it('should emit playbackBufferFull when > 90% full', () => {
-    // Test: listener receives full buffer warning
-  });
-
-  it('should handle playback buffer underflow', async () => {
-    // Test: insert silence, pause playback
-  });
-
-  it('should stop playback gracefully', async () => {
-    // Test: stopPlayback() succeeds
-  });
-
-  it('should track playback statistics', () => {
-    // Test: framesQueued, framesPlayed updated
-  });
-
-  it('should return accurate playback status', () => {
-    // Test: getPlaybackStatus() returns correct values
-  });
-});
-```
-
-### D. Opus Encoding (8 tests)
-
-```typescript
-describe('AudioStreamHandler - Opus Encoding', () => {
-  it('should encode PCM to Opus', () => {
-    // Test: encodeToOpus(buffer) returns Opus data
-  });
-
-  it('should require exactly 3840 bytes input', () => {
-    // Test: throws on wrong size
-  });
-
-  it('should return variable-size Opus frames', () => {
-    // Test: output 20-60 bytes typically
-  });
-
-  it('should detect silence and encode efficiently', () => {
-    // Test: silent frames encode to ~1 byte
-  });
-
-  it('should handle consecutive encoding calls', () => {
-    // Test: encode 10 frames in sequence
-  });
-
-  it('should increment framesProcessed on success', () => {
-    // Test: captureStats.framesProcessed ++
-  });
-
-  it('should increment framesDropped on error', () => {
-    // Test: invalid input → framesDropped ++
-  });
-
-  it('should throw AudioStreamError on encoding failure', () => {
-    // Test: specific error type
-  });
-});
-```
-
-### E. Opus Decoding (8 tests)
-
-```typescript
-describe('AudioStreamHandler - Opus Decoding', () => {
-  it('should decode Opus to PCM', () => {
-    // Test: decodeFromOpus(buffer) returns PCM
-  });
-
-  it('should return exactly 3840 bytes PCM', () => {
-    // Test: buffer.length === 3840
-  });
-
-  it('should create per-user decoders', () => {
-    // Test: decodeFromOpus(buf1, ssrc1) and (buf2, ssrc2) use different decoders
-  });
-
-  it('should reuse decoder for same SSRC', () => {
-    // Test: getOrCreateDecoder(ssrc) called once per ssrc
-  });
-
-  it('should handle silence frames', () => {
-    // Test: decode 1-byte DTX silence packet
-  });
-
-  it('should handle frame loss gracefully', () => {
-    // Test: decoder interpolates missing frames
-  });
-
-  it('should track decode statistics', () => {
-    // Test: framesProcessed updated
-  });
-
-  it('should throw AudioStreamError on decode failure', () => {
-    // Test: invalid data → throws
-  });
-});
-```
-
-### F. Buffer Management (6 tests)
-
-```typescript
-describe('AudioStreamHandler - Buffer Management', () => {
-  it('should create circular buffer with correct size', () => {
-    // Test: buffer.maxSize === configured size
-  });
-
-  it('should wrap around when full', () => {
-    // Test: push 11 items to 10-size buffer
-    // Verify oldest item overwritten
-  });
-
-  it('should trim old frames periodically', () => {
-    // Test: frames older than maxFrameAge removed
-  });
-
-  it('should maintain proper read/write indices', () => {
-    // Test: buffer.getSize() accurate after operations
-  });
-
-  it('should handle concurrent push/pop', () => {
-    // Test: add and remove frames simultaneously
-  });
-
-  it('should clear buffer completely', () => {
-    // Test: buffer.clear() → buffer.isEmpty()
-  });
-});
-```
-
-### G. User Audio Streams (4 tests)
-
-```typescript
-describe('AudioStreamHandler - User Audio Streams', () => {
-  it('should track audio from multiple users', () => {
-    // Test: addUserAudio(userId1), addUserAudio(userId2)
-  });
-
-  it('should return correct audio for each user', () => {
-    // Test: captureUserAudio(userId1) vs captureUserAudio(userId2)
-  });
-
-  it('should detect user speaking/silence', () => {
-    // Test: userStartedSpeaking, userStoppedSpeaking events
-  });
-
-  it('should clean up inactive user streams', () => {
-    // Test: getAllActiveUsers() size reduces after timeout
-  });
-});
-```
-
-### H. Error Handling (4 tests)
-
-```typescript
-describe('AudioStreamHandler - Error Handling', () => {
-  it('should throw AudioStreamError on buffer overflow', async () => {
-    // Test: fill buffer, verify error
-  });
-
-  it('should emit error events for codec failures', () => {
-    // Test: listener receives error event
-  });
-
-  it('should handle disconnected voice connection', () => {
-    // Test: voiceConnection becomes null
-  });
-
-  it('should recover from transient errors', async () => {
-    // Test: error → retry → success
-  });
-});
-```
-
-### Test Utilities
-
-```typescript
-// Mock VoiceConnection with audio stream
-class MockVoiceConnection {
-  receiver: MockAudioReceiver;
+// In VoiceConnectionManager
+async sendAudio(pcmData: Float32Array) {
+  // 1. AudioStreamHandler encodes
+  const opusData = await handler.encodeFrame(pcmData);
   
-  on(event: string, listener: Function) {
-    if (event === 'ready') {
-      setTimeout(() => listener(), 10);
-    }
-  }
-}
-
-// Mock Opus encoder
-class MockOpusEncoder {
-  encode(buffer: Buffer): Buffer {
-    // Return compressed data (simulate 20-60 byte frames)
-    return Buffer.alloc(Math.random() * 40 + 20);
-  }
-}
-
-// Helper to create test audio frames
-function createTestAudioFrame(
-  sampleCount: number = 960,
-  timestamp: number = Date.now()
-): AudioFrame {
-  return {
-    data: Buffer.alloc(sampleCount * 4), // 2 channels × 2 bytes
-    sampleRate: 48000,
-    channels: 2,
-    sampleCount,
+  // 2. Wrap in RTP packet
+  const rtpPacket = voiceSocket.createRTPPacket(
+    opusData,
+    sequenceNumber++,
     timestamp,
-    isSilence: false,
-    isJitter: false
-  };
+    ssrc
+  );
+  
+  // 3. Send over UDP
+  await voiceSocket.send(rtpPacket);
 }
 ```
 
----
-
-## Part 6: Integration with VoiceConnectionManager
-
-### How Phase 3 Uses Phase 2
-
-**VoiceConnectionManager provides:**
-1. `VoiceConnection` object (from Discord.js voice)
-2. Connection state tracking
-3. Event emission system
-4. Guild/channel management
-
-**AudioStreamHandler uses:**
-
+**Receiving Audio (Receive → Decode → Playback):**
 ```typescript
-// Phase 3 constructor
-constructor(
-  voiceConnection: VoiceConnection,  // Provided by Phase 2
-  guildId: string,
-  options?: AudioStreamHandlerOptions
-) {
-  this.voiceConnection = voiceConnection;
-  this.guildId = guildId;
+// In VoiceSocket listener
+voiceSocket.on('rtp', async (rtpPacket) => {
+  // 1. Extract Opus payload
+  const opusData = rtpPacket.payload;
   
-  // Set up listeners for connection events
-  voiceConnection.on('ready', () => this.handleConnectionReady());
-  voiceConnection.on('error', (error) => this.handleConnectionError(error));
-  voiceConnection.on('disconnect', () => this.handleDisconnect());
-}
-```
-
-### Integration Pattern
-
-```typescript
-// Phase 2: VoiceConnectionManager
-class VoiceConnectionManager {
-  async connect(guildId: string, channelId: string): Promise<VoiceConnection> {
-    // Returns VoiceConnection object
-    return connection;
-  }
-}
-
-// Phase 3: Audio handling using Phase 2's connection
-async function setupAudioForGuild(guildId: string) {
-  const connectionManager = new VoiceConnectionManager(client);
-  const voiceConnection = await connectionManager.connect(guildId, channelId);
+  // 2. AudioStreamHandler decodes
+  const pcmData = await handler.decodeFrame({
+    data: opusData,
+    timestamp: rtpPacket.timestamp,
+    sequenceNumber: rtpPacket.sequence,
+    ssrc: rtpPacket.ssrc
+  });
   
-  // Pass connection to Phase 3
-  const audioHandler = new AudioStreamHandler(voiceConnection, guildId);
-  await audioHandler.initialize();
-  
-  // Now can capture/play audio
-  await audioHandler.startCapture();
-}
-```
-
-### VoiceConnection Interface (from @discordjs/voice)
-
-```typescript
-interface VoiceConnection {
-  // Connection state
-  state: VoiceConnectionState;
-  joinConfig: JoinVoiceChannelData;
-  
-  // Audio streams
-  receiver: VoiceReceiver;
-  state: AudioPlayer | null;
-  
-  // Connection lifecycle
-  connect(): Promise<void>;
-  destroy(adapterAvailable: boolean): void;
-  
-  // Events
-  on(event: 'ready', listener: () => void): this;
-  on(event: 'error', listener: (error: Error) => void): this;
-  on(event: 'disconnect', listener: () => void): this;
-  on(event: 'authenticated', listener: () => void): this;
-  // ... other events
-}
-```
-
----
-
-## Part 7: Success Criteria for Phase 3
-
-### Functional Requirements ✓
-
-- [ ] Capture user voice data from Discord streams
-- [ ] Return captured audio as AudioBuffer array
-- [ ] Play audio back to Discord voice channel
-- [ ] Support concurrent capture from multiple users
-- [ ] Handle Opus encoding without data loss
-- [ ] Handle Opus decoding without artifacts
-- [ ] Manage buffer overflow gracefully
-- [ ] Detect and skip aged frames (>1s old)
-- [ ] Track audio statistics accurately
-
-### Audio Quality Requirements ✓
-
-- [ ] Maintain 48kHz sample rate exactly
-- [ ] Preserve stereo (2 channel) format
-- [ ] Support 20ms audio frames
-- [ ] Minimize latency (<100ms end-to-end)
-- [ ] Handle jitter in packet arrival
-- [ ] Recover from frame loss without dropout
-
-### Code Quality Requirements ✓
-
-- [ ] 48+ test cases (all passing)
-- [ ] Full TypeScript type safety
-- [ ] JSDoc on all public methods
-- [ ] No `any` types (except framework)
-- [ ] Proper error class implementation
-- [ ] Clean code structure
-- [ ] <5% CPU per concurrent stream
-- [ ] No memory leaks on destroy
-
-### Resource Management Requirements ✓
-
-- [ ] Predictable memory usage (circular buffers)
-- [ ] Proper cleanup on destroy
-- [ ] No event listener accumulation
-- [ ] Timeout cleanup
-- [ ] Decoder cleanup per user
-- [ ] Stream closure handling
-
-### Integration Requirements ✓
-
-- [ ] Works with Phase 2 VoiceConnectionManager
-- [ ] Uses VoiceConnection interface correctly
-- [ ] Integrates with Phase 4 (STT)
-- [ ] Integrates with Phase 5 (TTS)
-- [ ] Compatible with existing types
-
----
-
-## Part 8: Implementation Checklist
-
-### Phase 3.1: Setup & Types (30 minutes)
-
-- [ ] Create `src/AudioStreamHandler.ts` file
-- [ ] Create `__tests__/AudioStreamHandler.test.ts` file
-- [ ] Update `src/types.ts` with all audio types
-- [ ] Update `src/index.ts` to export new classes
-- [ ] Verify TypeScript compiles
-- [ ] Commit: "feat(voice): Phase 3 structure and types"
-
-### Phase 3.2: Test Suite (1 hour)
-
-Following TDD approach - write tests FIRST:
-
-- [ ] Section A: Constructor tests (6 tests)
-- [ ] Section B: Capture tests (10 tests)
-- [ ] Section C: Playback tests (10 tests)
-- [ ] Section D: Encoding tests (8 tests)
-- [ ] Section E: Decoding tests (8 tests)
-- [ ] Section F: Buffer tests (6 tests)
-- [ ] Section G: User stream tests (4 tests)
-- [ ] Section H: Error handling tests (4 tests)
-- [ ] Run `npm test` - expect ~48 failures
-- [ ] Commit: "test(voice): Phase 3 comprehensive test suite"
-
-### Phase 3.3: Core Implementation (1.5 hours)
-
-Implement one section at a time:
-
-#### Step 1: Constructor & Initialization (15 min)
-- [ ] Create AudioStreamHandler class
-- [ ] Implement constructor
-- [ ] Implement initialize()
-- [ ] Implement destroy()
-- [ ] Run tests A - expect 6/6 pass
-- [ ] Commit: "feat(voice): Phase 3.3.1 constructor"
-
-#### Step 2: Circular Buffer (15 min)
-- [ ] Implement CircularBuffer<T> class
-- [ ] Implement push/pop/peek methods
-- [ ] Implement clear/getSize methods
-- [ ] Run tests F - expect 6/6 pass
-- [ ] Commit: "feat(voice): Phase 3.3.2 circular buffer"
-
-#### Step 3: Opus Encoder (20 min)
-- [ ] Import @discordjs/opus
-- [ ] Implement createOpusEncoder()
-- [ ] Implement encodeToOpus()
-- [ ] Add error handling
-- [ ] Run tests D - expect 8/8 pass
-- [ ] Commit: "feat(voice): Phase 3.3.3 opus encoding"
-
-#### Step 4: Opus Decoder (20 min)
-- [ ] Implement getOrCreateDecoder()
-- [ ] Implement decodeFromOpus()
-- [ ] Add per-user decoder tracking
-- [ ] Add error handling
-- [ ] Run tests E - expect 8/8 pass
-- [ ] Commit: "feat(voice): Phase 3.3.4 opus decoding"
-
-#### Step 5: Audio Capture (20 min)
-- [ ] Implement startCapture()
-- [ ] Implement stopCapture()
-- [ ] Implement captureUserAudio()
-- [ ] Implement frame trimming
-- [ ] Implement silence detection
-- [ ] Implement overflow handling
-- [ ] Run tests B - expect 10/10 pass
-- [ ] Commit: "feat(voice): Phase 3.3.5 audio capture"
-
-#### Step 6: Audio Playback (20 min)
-- [ ] Implement playAudioStream()
-- [ ] Implement playAudioFrames()
-- [ ] Implement stopPlayback()
-- [ ] Implement getPlaybackStatus()
-- [ ] Implement buffer monitoring
-- [ ] Add underflow handling
-- [ ] Run tests C - expect 10/10 pass
-- [ ] Commit: "feat(voice): Phase 3.3.6 audio playback"
-
-#### Step 7: User Audio Streams & Stats (15 min)
-- [ ] Implement user stream tracking
-- [ ] Implement getAllActiveUsers()
-- [ ] Implement statistics tracking
-- [ ] Implement getCaptureStats()
-- [ ] Implement getPlaybackStats()
-- [ ] Run tests G - expect 4/4 pass
-- [ ] Commit: "feat(voice): Phase 3.3.7 user streams"
-
-#### Step 8: Event System (10 min)
-- [ ] Implement addEventListener()
-- [ ] Implement removeEventListener()
-- [ ] Implement event emission
-- [ ] Test event firing
-- [ ] Run all tests H - expect 4/4 pass
-- [ ] Commit: "feat(voice): Phase 3.3.8 events"
-
-### Phase 3.4: Integration Testing (30 minutes)
-
-- [ ] Test with real VoiceConnection
-- [ ] Test capture + playback cycle
-- [ ] Test with multiple users
-- [ ] Test buffer management under load
-- [ ] Test memory usage stability
-- [ ] Create integration test file
-- [ ] Verify all 48 tests pass: `npm test`
-- [ ] Commit: "test(voice): Phase 3 integration tests"
-
-### Phase 3.5: Build & Verification (30 minutes)
-
-- [ ] Run TypeScript build: `npm run build`
-- [ ] Verify no build errors
-- [ ] Check generated type definitions
-- [ ] Review dist/ directory structure
-- [ ] Verify all exports available
-- [ ] Test importing from package
-- [ ] Commit: "build(voice): Phase 3 TypeScript build"
-
-### Phase 3.6: Code Review & Documentation (30 minutes)
-
-- [ ] Review code for quality
-- [ ] Add/verify JSDoc comments
-- [ ] Create PHASE3_IMPLEMENTATION.md usage guide
-- [ ] Create PHASE3_QUICK_REFERENCE.md
-- [ ] Update README.md with Phase 3 info
-- [ ] Add code examples
-- [ ] Verify all exported APIs documented
-- [ ] Commit: "docs(voice): Phase 3 documentation"
-
-### Phase 3.7: Final Verification (20 minutes)
-
-Verify all success criteria met:
-
-- [ ] Run full test suite: `npm test`
-  - Expected: 48/48 tests passing
-  - Duration: <5 seconds
-  
-- [ ] Verify TypeScript:
-  - Command: `npx tsc --noEmit`
-  - Expected: 0 errors, 0 warnings
-  
-- [ ] Check code coverage:
-  - Command: `npm test -- --coverage`
-  - Expected: >85% coverage
-  
-- [ ] Verify no memory leaks:
-  - Create test with 100+ capture frames
-  - Monitor memory usage
-  - Expected: stable within 10%
-  
-- [ ] Test with Phase 2 integration:
-  - Create connection using VoiceConnectionManager
-  - Wrap with AudioStreamHandler
-  - Capture and playback successfully
-
-### Phase 3.8: Final Commit (10 minutes)
-
-```bash
-# Stage all changes
-git add -A
-
-# Review changes
-git diff --cached
-
-# Create comprehensive commit
-git commit -m "feat(voice): Phase 3 AudioStreamHandler complete
-
-- Implemented AudioStreamHandler class for audio stream management
-- Added circular buffer for efficient audio frame handling
-- Integrated Opus encoder/decoder for audio compression
-- Implemented audio capture from Discord streams
-- Implemented audio playback to Discord voice channels
-- Added comprehensive statistics tracking
-- Created 48 test cases (all passing)
-- Full TypeScript type safety
-- Proper error handling and recovery
-- Ready for Phase 4 STT integration
-
-Closes: Phase 3 implementation"
-
-# Verify commit
-git log --oneline -1
-```
-
----
-
-## Part 9: Timing Summary
-
-| Phase | Task | Time | Total |
-|-------|------|------|-------|
-| 3.1 | Setup & Types | 30 min | 30 min |
-| 3.2 | Test Suite | 60 min | 90 min |
-| 3.3 | Implementation | 90 min | 180 min |
-| 3.4 | Integration Testing | 30 min | 210 min |
-| 3.5 | Build & Verification | 30 min | 240 min |
-| 3.6 | Code Review & Docs | 30 min | 270 min |
-| 3.7 | Final Verification | 20 min | 290 min |
-| 3.8 | Commit | 10 min | 300 min |
-| **TOTAL** | | **5 hours** | **300 min** |
-
-**Realistic Duration:** 2.5-3.5 hours (with breaks and iteration)
-
----
-
-## Part 10: Known Limitations & Future Work
-
-### Limitations (By Design)
-
-1. **Fixed Buffer Sizes** - Cannot dynamically grow buffers
-   - Mitigation: Configure sizes for expected latency
-   - Future: Implement dynamic buffer sizing (Phase 6+)
-
-2. **Per-Decoder Overhead** - One decoder per unique user
-   - Mitigation: Clean up inactive users
-   - Future: Implement decoder pooling (Phase 6+)
-
-3. **Synchronous Encoding/Decoding** - Blocks event loop
-   - Mitigation: Opus operations are very fast (<5ms)
-   - Future: Use worker threads for heavy processing (Phase 6+)
-
-4. **No RTP Packet Assembly** - Assumes complete frames
-   - Mitigation: Discord packets are complete
-   - Future: Add packet reassembly (Phase 6+)
-
-5. **Basic Silence Detection** - Energy-based only
-   - Mitigation: Good enough for VAD
-   - Future: Machine learning silence detection (Phase 6+)
-
-### Future Enhancements (Post-Phase 3)
-
-1. **Acoustic Echo Cancellation (AEC)**
-   - Detect and remove speaker audio from mic input
-   - Improve call quality
-
-2. **Noise Suppression**
-   - Background noise reduction
-   - Better transcription accuracy
-
-3. **Automatic Gain Control (AGC)**
-   - Normalize audio levels
-   - Prevent distortion
-
-4. **Multi-Stream Recording**
-   - Record each user separately
-   - Mix streams at different levels
-
-5. **Real-time Metrics**
-   - Network jitter detection
-   - Packet loss rate
-   - MOS (Mean Opinion Score) estimation
-
-6. **Audio Format Conversion**
-   - WAV export
-   - MP3 export
-   - Different sample rates
-
----
-
-## Part 11: References & Resources
-
-### @discordjs/voice Documentation
-- [Discord.js Voice GitHub](https://github.com/discordjs/voice)
-- [VoiceConnection API](https://discord.js.org/#/docs/voice/stable/class/VoiceConnection)
-- [Audio Receiver API](https://discord.js.org/#/docs/voice/stable/class/VoiceReceiver)
-
-### Opus Codec
-- [Opus RFC 6716](https://tools.ietf.org/html/rfc6716) - Full specification
-- [IETF Opus Documentation](https://opus-codec.org/) - Official docs
-- [@discordjs/opus](https://github.com/discordjs/opus) - Wrapper package
-
-### Audio Processing
-- [prism-media GitHub](https://github.com/hydrabolt/prism-media) - Format conversion
-- [WebAudio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Audio concepts
-
-### Discord Voice Protocol
-- [Discord Voice Connections](https://discord.com/developers/docs/topics/voice-connections)
-- [Discord Audio Codec](https://discord.com/developers/docs/topics/voice-connections#audio-codec)
-
-### Testing
-- [Vitest Documentation](https://vitest.dev/) - Test framework
-- [Chai Assertions](https://www.chaijs.com/api/) - Assertion library
-
----
-
-## Part 12: Phase 3 Quick Reference
-
-### Class API (Public Methods)
-
-```typescript
-// Initialization
-constructor(connection: VoiceConnection, guildId: string, options?: AudioStreamHandlerOptions)
-async initialize(): Promise<void>
-async destroy(): Promise<void>
-
-// Capture
-async startCapture(): Promise<void>
-async stopCapture(): Promise<void>
-captureUserAudio(userId: string): AudioBuffer[] | null
-getUserAudioStream(userId: string): ReadableStream<AudioFrame> | null
-getAllActiveUsers(): string[]
-
-// Playback
-async playAudioStream(audioData: Buffer): Promise<void>
-async playAudioFrames(frames: AudioFrame[]): Promise<void>
-async stopPlayback(): Promise<void>
-getPlaybackStatus(): PlaybackStatus
-
-// Codec
-encodeToOpus(pcmBuffer: Buffer): Buffer
-decodeFromOpus(opusBuffer: Buffer, ssrc?: number): Buffer
-
-// Buffers
-getCaptureBufferSize(): number
-getPlaybackBufferSize(): number
-
-// Listeners & Stats
-addEventListener(listener: AudioStreamListener): void
-removeEventListener(listener: AudioStreamListener): void
-getCaptureStats(): AudioStreamStats
-getPlaybackStats(): AudioStreamStats
-resetStats(): void
-```
-
-### Configuration Examples
-
-```typescript
-// Default configuration
-const handler = new AudioStreamHandler(connection, guildId);
-
-// Custom configuration
-const handler = new AudioStreamHandler(connection, guildId, {
-  captureBufferSize: 10,        // 200ms
-  playbackBufferSize: 25,       // 500ms
-  opusBitrate: 64000,           // 64 kbps
-  enableSilenceDetection: true,
-  debug: true                   // Enable logging
+  // 3. Enqueue for playback
+  await handler.playFrame(pcmData);
 });
 ```
 
-### Common Usage Pattern
+### 5.3 Dependencies
 
+**Imports from Phase 2:**
 ```typescript
-// Setup
-const audioHandler = new AudioStreamHandler(voiceConnection, guildId);
-await audioHandler.initialize();
+import { VoiceConnectionManager } from './VoiceConnectionManager';
+import { VoiceSocket } from './VoiceSocket';
+import { RTPPacket, VoiceState } from './types';
+```
 
-// Start capturing
-await audioHandler.startCapture();
-
-// Listen for events
-audioHandler.addEventListener({
-  onFrameCaptured: (frame) => {
-    console.log(`Captured ${frame.sampleCount} samples`);
-  },
-  onUserStartedSpeaking: (userId) => {
-    console.log(`User ${userId} started speaking`);
-  }
-});
-
-// Capture audio from user
-const audioFrames = audioHandler.captureUserAudio('user-id');
-if (audioFrames) {
-  // Process audio...
-  console.log(`Got ${audioFrames.length} frames`);
-}
-
-// Play audio back
-const pcmBuffer = Buffer.alloc(3840); // Create audio
-await audioHandler.playAudioStream(pcmBuffer);
-
-// Cleanup
-await audioHandler.stopCapture();
-await audioHandler.destroy();
+**Exports to Phase 2:**
+```typescript
+export { AudioStreamHandler, AudioStreamConfig, AudioStreamError };
+export { AudioFrame, OpusFrame, BufferHealth, AudioStreamStats };
 ```
 
 ---
 
-## Part 13: Questions & Answers
+## 6. Test Cases (TDD: 48 Cases)
 
-**Q: What if my VoiceConnection becomes invalid?**  
-A: The handler detects disconnection and emits error event. Gracefully stop capture/playback. Reconnect requires new handler instance.
+### 6.1 Initialization & Lifecycle (6 tests)
 
-**Q: Can I capture from multiple users at once?**  
-A: Yes! Each user gets their own decoder and audio stream. Capture independently with `captureUserAudio(userId)`.
+- [ ] TC-001: Constructor accepts valid config
+- [ ] TC-002: Constructor rejects invalid sample rate (not 48kHz)
+- [ ] TC-003: initialize() creates encoder/decoder successfully
+- [ ] TC-004: initialize() fails gracefully if Opus unavailable
+- [ ] TC-005: shutdown() cleans up resources and stops processing
+- [ ] TC-006: reset() clears buffers but keeps handler alive
 
-**Q: How do I integrate with Phase 4 (STT)?**  
-A: Get captured frames with `captureUserAudio(userId)`, encode to Opus with `encodeToOpus()`, send to Whisper API.
+### 6.2 Audio Capture (6 tests)
 
-**Q: What's the latency?**  
-A: ~100ms end-to-end (20ms capture + 20ms buffer + 20ms codec + 40ms jitter buffer).
+- [ ] TC-007: captureFrame() accepts Float32Array PCM data
+- [ ] TC-008: captureFrame() rejects invalid buffer size
+- [ ] TC-009: captureFrame() increments sequence number
+- [ ] TC-010: captureFrame() updates timestamp correctly
+- [ ] TC-011: startCapture() begins frame acquisition
+- [ ] TC-012: stopCapture() halts frame acquisition
 
-**Q: How much CPU does audio processing use?**  
-A: ~2-5% per stream. Opus encoding is highly optimized.
+### 6.3 Opus Encoding (8 tests)
 
-**Q: Can I record to file?**  
-A: Not in Phase 3 - that's Phase 6+ feature. For now, collect AudioBuffer arrays.
+- [ ] TC-013: encodeFrame() returns Uint8Array
+- [ ] TC-014: encodeFrame() produces valid Opus packet (20-60 bytes)
+- [ ] TC-015: encodeFrame() rejects non-960-sample frames
+- [ ] TC-016: encodeFrame() preserves audio quality (SNR > 40dB)
+- [ ] TC-017: encodeFrameBatch() encodes multiple frames
+- [ ] TC-018: encodeFrameBatch() maintains frame order
+- [ ] TC-019: encodeFrame() with FEC enabled produces larger packets
+- [ ] TC-020: encodeFrame() with DTX enabled skips silence
 
-**Q: What if buffer overflows?**  
-A: Oldest frames are automatically discarded. Event emitted for monitoring. Consider increasing buffer size.
+### 6.4 Opus Decoding (8 tests)
 
-**Q: How do I debug audio issues?**  
-A: Enable `debug: true` in options. Check `getCaptureStats()` and `getPlaybackStats()` for metrics.
+- [ ] TC-021: decodeFrame() accepts Uint8Array Opus data
+- [ ] TC-022: decodeFrame() returns Float32Array PCM (960 × 2 samples)
+- [ ] TC-023: decodeFrame() handles frame loss with PLC
+- [ ] TC-024: decodeBatch() decodes multiple frames
+- [ ] TC-025: decodeBatch() maintains timestamp order
+- [ ] TC-026: decodeFrame() rejects invalid Opus packet
+- [ ] TC-027: decodeFrame() after silence produces noise gate output
+- [ ] TC-028: decodeLoss() generates synthetic audio for missing frames
+
+### 6.5 Jitter Buffer Management (8 tests)
+
+- [ ] TC-029: enqueueFrame() adds frame to jitter buffer
+- [ ] TC-030: enqueueFrame() rejects out-of-order frames
+- [ ] TC-031: dequeueFrame() returns frame when playout time reached
+- [ ] TC-032: dequeueFrame() returns null if buffer empty
+- [ ] TC-033: getBufferHealth() reports occupancy
+- [ ] TC-034: getBufferHealth() detects underrun (< 2 frames)
+- [ ] TC-035: getBufferHealth() detects overrun (> 90% full)
+- [ ] TC-036: flushBuffer() clears all frames
+
+### 6.6 Circular Buffer Management (6 tests)
+
+- [ ] TC-037: writeFrame() stores frame in circular buffer
+- [ ] TC-038: readFrame() retrieves oldest frame
+- [ ] TC-039: getOccupancy() reports frame count
+- [ ] TC-040: Circular buffer wraps correctly (write_head > capacity)
+- [ ] TC-041: Buffer overflow detected and reported
+- [ ] TC-042: Buffer underrun detected and reported
+
+### 6.7 Error Handling (6 tests)
+
+- [ ] TC-043: onError() callback fires on encoding failure
+- [ ] TC-044: onError() callback fires on decoding failure
+- [ ] TC-045: encodeFrame() retries on transient failure (< max retries)
+- [ ] TC-046: getLastError() returns most recent error
+- [ ] TC-047: clearErrorCallbacks() removes error handlers
+- [ ] TC-048: Invalid state operation raises NOT_INITIALIZED error
 
 ---
 
-## Phase 3 Status
+## 7. Error Recovery Strategy
 
-```
-Status: ✅ PLANNING COMPLETE
+### 7.1 Encoder Failures
 
-Key Deliverables:
-├─ Type Definitions: ✅ DESIGNED
-├─ Class Structure: ✅ DESIGNED
-├─ Test Suite (48 tests): ✅ DESIGNED
-├─ Implementation Checklist: ✅ DESIGNED
-├─ Buffer Strategy: ✅ DESIGNED
-├─ Opus Integration: ✅ DESIGNED
-├─ Integration Points: ✅ DEFINED
-└─ Success Criteria: ✅ DEFINED
+| Error | Recovery | Retry |
+|-------|----------|-------|
+| Invalid frame size | Log warning, skip frame | No |
+| Sample rate mismatch | Resample input | Yes (1×) |
+| Memory allocation | Clear buffer cache | Yes (2×) |
+| Encoder timeout | Reinitialize encoder | Yes (3×) |
 
-Ready for Implementation: ✅ YES
-```
+### 7.2 Decoder Failures
 
----
+| Error | Recovery | Retry |
+|-------|----------|-------|
+| Corrupted Opus packet | PLC (generate silence) | No |
+| Invalid packet header | Skip, wait for next | No |
+| Sample rate mismatch | Resample output | Yes (1×) |
+| Memory allocation | Clear cache | Yes (2×) |
 
-## Next Steps
+### 7.3 Buffer Failures
 
-1. ✅ Read this document (PHASE3_PLAN.md)
-2. 🔲 **For Implementation Agent:**
-   - Follow Phase 3.1-3.8 checklist
-   - Implement TDD style (tests first)
-   - Run tests frequently
-   - Commit after each section
-
-3. 🔲 **For Code Review Agent:**
-   - Verify all 48 tests pass
-   - Check TypeScript compilation
-   - Review code quality
-   - Verify integration with Phase 2
-
-4. 🔲 **For Main Agent:**
-   - Approve Phase 3 implementation
-   - Proceed to Phase 4 (STT Integration)
+| Error | Recovery | Retry |
+|-------|----------|-------|
+| Jitter buffer full | Drop oldest frame | No |
+| Circular buffer full | Drop capture frame | No |
+| Timestamp inversion | Detect discontinuity | No |
 
 ---
 
-**Plan Prepared By:** Voice Integration Planning Agent (Phase 3)  
-**Date:** 2026-02-07 19:54 EST  
-**Status:** READY FOR IMPLEMENTATION ✅  
-**Estimated Success Rate:** 95%+  
-**Complexity Level:** Moderate 🟨  
-**Dependencies:** Phase 2 Complete ✅
+## 8. Performance Targets
+
+| Metric | Target | Tolerance |
+|--------|--------|-----------|
+| Encoding latency | < 5 ms | ± 2 ms |
+| Decoding latency | < 5 ms | ± 2 ms |
+| Buffer latency | 40 ms | ± 10 ms |
+| Total E2E latency | < 100 ms | ± 20 ms |
+| CPU usage | < 10% | per encoder/decoder |
+| Memory footprint | < 50 MB | including buffers |
+| Jitter | < 20 ms | RMS |
+| Frame loss handling | < 0.1% | recovery rate |
+
+---
+
+## 9. Implementation Checklist
+
+- [ ] Create `AudioStreamHandler` base class
+- [ ] Implement `OpusEncoder` wrapper
+- [ ] Implement `OpusDecoder` wrapper
+- [ ] Implement `JitterBuffer` with adaptive latency
+- [ ] Implement `CircularAudioBuffer` with wrap-around
+- [ ] Add comprehensive error handling (8 error codes minimum)
+- [ ] Add metrics collection (stats aggregation)
+- [ ] Integrate with VoiceConnectionManager
+- [ ] Write 48 test cases (TDD)
+- [ ] Performance benchmarking
+- [ ] Memory profiling
+- [ ] Integration testing with real Discord voice
+
+---
+
+## 10. Next Steps (Phase 4)
+
+Phase 4 will add:
+- Voice Activity Detection (VAD)
+- Noise suppression / echo cancellation
+- Advanced resampling
+- Recording to file
+- Multi-speaker mixing
+
+---
+
+**End of PHASE3_PLAN.md**
