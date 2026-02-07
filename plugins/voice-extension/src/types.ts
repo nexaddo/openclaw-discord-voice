@@ -194,3 +194,148 @@ export interface AudioBuffer {
   data: Buffer;
   timestamp: number;
 }
+
+// ============================================
+// Audio Stream Handler Types (Phase 3)
+// ============================================
+
+/**
+ * Configuration for AudioStreamHandler
+ */
+export interface AudioStreamConfig {
+  // Audio parameters
+  sampleRate: number;              // 48000 Hz (required)
+  channels: number;                // 2 (stereo) or 1 (mono)
+  frameSize: number;               // 960 samples per frame (20ms @ 48kHz)
+  bitRate: number;                 // 128000 (128 kbps, default)
+
+  // Buffer configuration
+  jitterBufferSize: number;         // 5-20 frames
+  circularBufferCapacity: number;   // 100 frames (max storage)
+  targetBufferLatency: number;      // ms, default 40
+
+  // Codec settings
+  opusComplexity: number;           // 0-10, default 5
+  useFEC: boolean;                  // Forward Error Correction
+  useDTX: boolean;                  // Discontinuous Transmission
+  maxPlaybackRate: number;          // 48000 (Hz)
+
+  // Device configuration
+  inputDeviceId?: string;           // Audio input device
+  outputDeviceId?: string;          // Audio output device
+  echoCancel?: boolean;             // Echo cancellation
+  noiseSuppression?: boolean;       // Noise suppression
+
+  // Error handling
+  maxRetries: number;               // Default 3
+  timeoutMs: number;                // Default 5000
+  enableMetrics: boolean;           // Track latency, quality
+}
+
+/**
+ * Audio Frame (input/output)
+ */
+export interface AudioFrame {
+  timestamp: number;                // milliseconds (monotonic)
+  sequenceNumber: number;           // Frame counter
+  ssrc: number;                     // Synchronization source (RTP)
+  data: Float32Array;               // PCM audio data (48kHz, stereo)
+  sampleCount: number;              // 960 samples typical
+  duration: number;                 // 20 ms typical
+}
+
+/**
+ * Opus-encoded frame
+ */
+export interface OpusFrame {
+  timestamp: number;
+  sequenceNumber: number;
+  ssrc: number;
+  data: Uint8Array;                 // Opus-encoded bytes
+  size: number;                     // Byte length
+}
+
+/**
+ * Jitter buffer metadata
+ */
+export interface JitterBufferFrame {
+  frame: AudioFrame;
+  arrivalTime: number;              // When frame arrived
+  playoutTime: number;              // When to play
+  isPlayed: boolean;
+}
+
+/**
+ * Statistics for audio stream
+ */
+export interface AudioStreamStats {
+  framesProcessed: number;
+  framesEncoded: number;
+  framesDecoded: number;
+  framesDropped: number;
+  frameLoss: number;                // Percentage
+  jitterMs: number;                 // Buffer jitter
+  latencyMs: number;                // End-to-end
+  bufferOccupancy: number;          // Frames in buffer
+  captureUnderrun: number;          // Underrun events
+  playbackUnderrun: number;         // Underrun events
+  cpuUsage: number;                 // Estimated %
+  codecQuality: number;             // 0-100
+}
+
+/**
+ * Buffer health status
+ */
+export interface BufferHealth {
+  occupancy: number;                // Current frame count
+  capacity: number;                 // Max capacity
+  percentFull: number;              // 0-100
+  isUnderrun: boolean;              // < 2 frames
+  isOverrun: boolean;               // > 90% full
+  jitter: number;                   // ms
+  recommendation: string;           // "optimal" | "low" | "high" | "critical"
+}
+
+/**
+ * Audio error codes
+ */
+export enum AudioErrorCode {
+  // Codec errors
+  OPUS_ENCODE_FAILED = 1001,
+  OPUS_DECODE_FAILED = 1002,
+  INVALID_FRAME_SIZE = 1003,
+  SAMPLE_RATE_MISMATCH = 1004,
+
+  // Buffer errors
+  BUFFER_OVERFLOW = 2001,
+  BUFFER_UNDERRUN = 2002,
+  JITTER_BUFFER_FULL = 2003,
+  INVALID_FRAME_TIMESTAMP = 2004,
+
+  // Device errors
+  CAPTURE_DEVICE_FAILED = 3001,
+  PLAYBACK_DEVICE_FAILED = 3002,
+  DEVICE_NOT_FOUND = 3003,
+
+  // Resource errors
+  MEMORY_ALLOCATION_FAILED = 4001,
+  ENCODER_UNAVAILABLE = 4002,
+  DECODER_UNAVAILABLE = 4003,
+
+  // State errors
+  INVALID_STATE = 5001,
+  NOT_INITIALIZED = 5002,
+  ALREADY_INITIALIZED = 5003,
+}
+
+/**
+ * Audio stream error
+ */
+export interface AudioStreamError {
+  code: AudioErrorCode;
+  message: string;
+  timestamp: number;
+  context?: Record<string, any>;
+  recoverable: boolean;
+  retryCount: number;
+}
