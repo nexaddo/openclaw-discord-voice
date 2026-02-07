@@ -25,7 +25,6 @@
     "discord.js": "^14.14.0"
   },
   "dependencies": {
-    "@openclaw/voice-extension": "workspace:*"
   },
   "openclaw": {
     "extensions": ["./index.ts"],

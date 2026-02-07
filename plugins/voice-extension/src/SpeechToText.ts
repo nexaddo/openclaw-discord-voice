@@ -89,7 +89,7 @@ export class VoiceActivityDetector {
   constructor(config: VADConfig = {}) {
     this.sampleRate = config.sampleRate ?? 48000;
     this.frameSize = config.frameSize ?? 960;
-    this.energyThreshold = config.energyThreshold ?? 40;
+    this.energyThreshold = config.energyThreshold ?? 5; // 5% of amplitude
     this.silenceThreshold = config.silenceThreshold ?? 10;
     this.voiceThreshold = config.voiceThreshold ?? 0.5;
 
@@ -148,9 +148,9 @@ export class VoiceActivityDetector {
     }
     const meanSquare = sum / samples.length;
     const rms = Math.sqrt(meanSquare);
-    // Convert to dB (20 * log10(rms))
-    const dB = 20 * Math.log10(Math.max(rms, 1e-10));
-    return Math.max(0, dB + 120); // Normalize to 0-120 dB range
+    // Simple linear energy scale (0-100) based on RMS amplitude
+    // For typical audio (0-1 range), 0.0 = silence, 0.5 = loud, 1.0 = max
+    return Math.min(100, rms * 100); // Scale to 0-100 range
   }
 
   /**
@@ -389,6 +389,7 @@ export class SpeechToText {
     options?: { language?: string }
   ): Promise<TranscriptionResult> {
     if (this.apiError) {
+      this.stats.errors++;
       throw new Error(`STT API Error: ${this.apiError}`);
     }
 
