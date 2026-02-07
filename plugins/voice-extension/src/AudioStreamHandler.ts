@@ -7,7 +7,7 @@ import {
   BufferHealth,
   AudioStreamError,
   AudioErrorCode,
-} from './types';
+} from './types.js';
 
 /**
  * Type for error callback function
