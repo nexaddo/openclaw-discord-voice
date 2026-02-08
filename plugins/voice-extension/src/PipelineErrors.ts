@@ -72,6 +72,8 @@ export interface PipelineErrorContext {
   retryCount?: number;
   originalError?: Error;
   metadata?: Record<string, any>;
+  status?: string;
+  requestId?: string;
 }
 
 /**

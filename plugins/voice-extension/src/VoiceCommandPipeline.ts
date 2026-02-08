@@ -156,14 +156,14 @@ export class VoiceCommandPipeline {
 
   constructor(config: VoiceCommandPipelineConfig) {
     this.config = {
-      maxConcurrentConnections: 10,
-      sessionTimeoutMs: 300000,
-      enableFallbackResponses: true,
-      enableMetrics: true,
-      agentTimeoutMs: 30000,
-      enableErrorRecovery: true,
-      maxRecoveryAttempts: 3,
       ...config,
+      maxConcurrentConnections: config.maxConcurrentConnections ?? 10,
+      sessionTimeoutMs: config.sessionTimeoutMs ?? 300000,
+      enableFallbackResponses: config.enableFallbackResponses ?? true,
+      enableMetrics: config.enableMetrics ?? true,
+      agentTimeoutMs: config.agentTimeoutMs ?? 30000,
+      enableErrorRecovery: config.enableErrorRecovery ?? true,
+      maxRecoveryAttempts: config.maxRecoveryAttempts ?? 3,
     };
 
     this.errorRecoveryHandler = new ErrorRecoveryHandler({
@@ -793,14 +793,3 @@ export class VoiceCommandPipeline {
     }, 60000); // Check every minute
   }
 }
-
-// Export types
-export type {
-  VoiceCommandPipelineConfig,
-  VoiceSession,
-  VoiceRequest,
-  SessionMetrics,
-  PipelineMetrics,
-  AgentResponse,
-  PipelineEvents,
-};

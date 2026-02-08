@@ -233,9 +233,6 @@ export class TextToSpeech {
         this.stats.cacheMisses++;
       }
 
-      // Use provided or current voice profile
-      const profile = voiceProfile ?? this.currentVoiceProfile;
-
       // Call API with retry logic
       let audioBuffer: Buffer | null = null;
       let lastError: Error | null = null;
