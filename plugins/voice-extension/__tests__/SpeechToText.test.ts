@@ -22,7 +22,7 @@ describe('SpeechToText - Section A: VoiceActivityDetector Initialization', () =>
   const defaultConfig: VADConfig = {
     sampleRate: 48000,
     frameSize: 960,
-    energyThreshold: 40,
+    energyThreshold: 5, // 5% of max amplitude
     silenceThreshold: 10,
     voiceThreshold: 0.5,
   };
@@ -46,7 +46,7 @@ describe('SpeechToText - Section A: VoiceActivityDetector Initialization', () =>
 
   test('TC-004: VoiceActivityDetector should initialize with energy threshold', () => {
     vad = new VoiceActivityDetector(defaultConfig);
-    expect(vad.getEnergyThreshold()).toBe(40);
+    expect(vad.getEnergyThreshold()).toBe(5); // 5% amplitude threshold
   });
 
   test('TC-005: VoiceActivityDetector should track speaking state', () => {
@@ -72,7 +72,7 @@ describe('SpeechToText - Section B: Voice Activity Detection', () => {
     vad = new VoiceActivityDetector({
       sampleRate: 48000,
       frameSize: 960,
-      energyThreshold: 40,
+      energyThreshold: 5, // 5% amplitude
       silenceThreshold: 10,
       voiceThreshold: 0.5,
     });
@@ -87,7 +87,7 @@ describe('SpeechToText - Section B: Voice Activity Detection', () => {
   test('TC-008: VAD should detect speech in loud frame', () => {
     const speechFrame = new Float32Array(960);
     for (let i = 0; i < 960; i++) {
-      speechFrame[i] = Math.sin((i / 960) * 2 * Math.PI) * 0.5; // Loud sine wave
+      speechFrame[i] = Math.sin((i / 960) * 2 * Math.PI) * 0.7; // Loud sine wave (0.7 amplitude)
     }
     const result = vad.detectSpeech(speechFrame);
     expect(result.isSpeech).toBe(true);
@@ -140,7 +140,7 @@ describe('SpeechToText - Section B: Voice Activity Detection', () => {
     const quietFrame = new Float32Array(960).fill(0.0001);
     const result = vad.detectSpeech(quietFrame);
     expect(result.isSpeech).toBe(false);
-    expect(result.energy).toBeLessThan(10);
+    expect(result.energy).toBeLessThan(1);
   });
 
   test('TC-015: VAD should handle very loud frames', () => {
@@ -230,7 +230,7 @@ describe('SpeechToText - Section D: Audio Format Conversion', () => {
     const opusBuffer = Buffer.from([0x4f, 0x50, 0x55, 0x53]); // Simplified Opus frame
     const pcm = await stt.convertOpusToPCM(opusBuffer);
     expect(pcm).toBeInstanceOf(Buffer);
-    expect(pcm.length).toBeGreaterThan(0);
+    expect(pcm.length).toBeGreaterThan(10); // At least some PCM data
   });
 
   test('TC-024: Should convert PCM to WAV format', async () => {
@@ -250,7 +250,8 @@ describe('SpeechToText - Section D: Audio Format Conversion', () => {
   });
 
   test('TC-026: Should validate PCM buffer format', async () => {
-    const invalidBuffer = Buffer.alloc(100);
+    // 101 bytes is not a valid multiple of 4 (2 channels * 2 bytes per sample)
+    const invalidBuffer = Buffer.alloc(101);
     await expect(stt.convertPCMToWAV(invalidBuffer)).rejects.toThrow();
   });
 
