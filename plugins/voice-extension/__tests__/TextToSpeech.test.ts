@@ -4,7 +4,7 @@
  * Using vitest framework
  */
 
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
+import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import {
   TextToSpeech,
   type TTSConfig,
