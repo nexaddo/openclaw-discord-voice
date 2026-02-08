@@ -6,3 +6,9 @@
 export * from './types.js';
 export { VoiceExtension } from './VoiceExtension.js';
 export { VoiceConnectionManager } from './VoiceConnectionManager.js';
+export {
+  AudioStreamHandler,
+  CircularAudioBuffer,
+  JitterBuffer,
+} from './AudioStreamHandler.js';
+export { SpeechToText, VoiceActivityDetector } from './SpeechToText.js';

@@ -4,72 +4,13 @@
  */
 
 import * as crypto from 'crypto';
-
-// ============================================================
-// Type Definitions for STT Pipeline
-// ============================================================
-
-/**
- * Configuration for Voice Activity Detection
- */
-export interface VADConfig {
-  sampleRate?: number; // Default: 48000 Hz
-  frameSize?: number; // Default: 960 samples
-  energyThreshold?: number; // Default: 40 dB
-  silenceThreshold?: number; // Default: 10 frames
-  voiceThreshold?: number; // Default: 0.5 (0-1)
-}
-
-/**
- * Result of voice activity detection
- */
-export interface VADResult {
-  isSpeech: boolean;
-  energy: number; // Energy in dB
-  confidence: number; // Confidence 0-1
-  silenceDuration: number; // ms
-}
-
-/**
- * Configuration for SpeechToText pipeline
- */
-export interface STTConfig {
-  apiKey: string;
-  modelName?: string; // Default: 'whisper-1'
-  sampleRate?: number; // Default: 48000 Hz
-  language?: string; // Default: 'en' (auto-detect if not set)
-  enableVAD?: boolean; // Default: true
-  timeoutMs?: number; // Default: 30000 ms
-}
-
-/**
- * Transcription result from Whisper API
- */
-export interface TranscriptionResult {
-  text: string;
-  language: string;
-  confidence: number; // 0-1
-  duration: number; // ms
-  timestamp: number; // Unix timestamp when transcribed
-  segments?: {
-    start: number;
-    end: number;
-    text: string;
-  }[];
-}
-
-/**
- * Statistics for STT performance monitoring
- */
-export interface STTStats {
-  transcribed: number;
-  errors: number;
-  totalFrames: number;
-  avgLatencyMs: number;
-  framesPerSecond: number;
-  memoryMb: number;
-  lastTranscription?: number; // Unix timestamp
-}
+import {
+  VADConfig,
+  VADResult,
+  STTConfig,
+  TranscriptionResult,
+  STTStats,
+} from './types';
 
 /**
  * Voice Activity Detector - Detects when user is speaking
@@ -403,14 +344,20 @@ export class SpeechToText {
 
     // Mock Whisper API call
     return new Promise((resolve, reject) => {
+      let finished = false;
+
       const timeout = setTimeout(() => {
+        finished = true;
         reject(new Error('Transcription timeout'));
       }, this.timeoutMs);
 
       // Simulate API latency (5-20ms for testing)
       const delay = Math.random() * 15 + 5;
       setTimeout(() => {
+        if (finished) return; // Prevent execution after timeout
+
         clearTimeout(timeout);
+        finished = true;
 
         const latency = Date.now() - startTime;
         this.latencies.push(latency);
@@ -478,11 +425,18 @@ export class SpeechToText {
       throw new Error('No accumulated frames to transcribe');
     }
 
-    // Combine frames
-    const combinedSize = this.accumulatedFrames.reduce((sum, f) => sum + f.length, 0);
+    // Convert each Opus frame to PCM first
+    const pcmFrames: Buffer[] = [];
+    for (const opusFrame of this.accumulatedFrames) {
+      const pcmBuffer = await this.convertOpusToPCM(opusFrame);
+      pcmFrames.push(pcmBuffer);
+    }
+
+    // Combine PCM frames
+    const combinedSize = pcmFrames.reduce((sum, f) => sum + f.length, 0);
     const combined = Buffer.alloc(combinedSize);
     let offset = 0;
-    for (const frame of this.accumulatedFrames) {
+    for (const frame of pcmFrames) {
       frame.copy(combined, offset);
       offset += frame.length;
     }
@@ -551,5 +505,8 @@ export class SpeechToText {
     this.vad.reset();
   }
 }
+
+// Re-export types for backward compatibility
+export type { VADConfig, VADResult, STTConfig, TranscriptionResult, STTStats };
 
 export default SpeechToText;

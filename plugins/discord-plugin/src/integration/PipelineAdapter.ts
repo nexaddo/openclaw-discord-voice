@@ -107,6 +107,6 @@ export class PipelineAdapter implements IPipelineAdapter {
    */
   isPipelineReady(guildId: string): boolean {
     // Once Phase 6 is merged, check actual readiness
-    return this.pipeline !== null;
+    return !!this.pipeline;
   }
 }
