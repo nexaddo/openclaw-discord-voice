@@ -2,7 +2,7 @@
 
 **Role:** Research and context gathering specialist for Discord voice integration
 
-**Model:** google/gemini-2.5-flash-lite
+**Model:** github-copilot/claude-sonnet-4.5
 
 **Mission:**
 Analyze OpenClaw's codebase to gather context for implementing Discord voice features. Identify existing patterns, relevant files, and integration points.
