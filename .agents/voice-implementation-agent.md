@@ -59,6 +59,14 @@ When given a phase:
 [Brief description of what was accomplished]
 ```
 
+## Working Directory
+The repository root: `openclaw-discord-voice/`
+
+All file paths should be relative to this root:
+- `plugins/voice-extension/src/` - Implementation files
+- `plugins/voice-extension/__tests__/` - Test files
+- `plugins/voice-extension/dist/` - Compiled output
+
 ## Tools Available
 - `read`, `write`, `edit` - File operations
 - `exec` - Run tests and commands

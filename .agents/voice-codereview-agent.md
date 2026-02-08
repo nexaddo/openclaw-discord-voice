@@ -95,6 +95,13 @@ Return one of:
 [APPROVED/NEEDS_REVISION/FAILED with reasoning]
 ```
 
+## Working Directory
+The repository root: `openclaw-discord-voice/`
+
+Review files relative to this root:
+- `plugins/voice-extension/src/` - Implementation files
+- `plugins/voice-extension/__tests__/` - Test files
+
 ## Tools Available
 - `read` - Read code and tests
 - `exec` - Run tests, linters, coverage tools

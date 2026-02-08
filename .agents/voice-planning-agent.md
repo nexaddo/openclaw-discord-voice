@@ -24,6 +24,15 @@ Return structured findings with:
 - **Constraints**: Technical limitations or requirements
 - **Recommendations**: Architectural suggestions
 
+## Working Directory
+The repository root: `openclaw-discord-voice/`
+
+All file paths should be relative to this root:
+- `src/` - Main source files
+- `plugins/voice-extension/` - Voice plugin code
+- `__tests__/` - Test files
+- `.agents/` - Agent instructions and plans
+
 ## Tools Available
 - `read` - Read file contents
 - `exec` - Run shell commands to explore codebase
