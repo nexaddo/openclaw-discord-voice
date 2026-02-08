@@ -1,196 +1,65 @@
-/**
- * Type definitions for voice extension
- */
-
 // ============================================
-// Voice Connection Configuration
+// STT/VAD Types (Phase 4)
 // ============================================
 
 /**
- * Configuration for joining a voice channel
+ * Configuration for Voice Activity Detection
  */
-export interface JoinVoiceChannelConfig {
-  guildId: string;
-  channelId: string;
-  selfMute?: boolean;     // Default: true
-  selfDeaf?: boolean;     // Default: true
-  group?: string;         // Optional group identifier
+export interface VADConfig {
+  sampleRate?: number; // Default: 48000 Hz
+  frameSize?: number; // Default: 960 samples
+  energyThreshold?: number; // Default: 40 dB
+  silenceThreshold?: number; // Default: 10 frames
+  voiceThreshold?: number; // Default: 0.5 (0-1)
 }
 
 /**
- * Connection state types
+ * Result of voice activity detection
  */
-export enum ConnectionStateType {
-  Signalling = 'signalling',      // Sending voice state update to gateway
-  Connecting = 'connecting',      // Attempting to establish connection
-  Ready = 'ready',                // Connected and ready to use
-  Disconnected = 'disconnected',  // Disconnected (can reconnect)
-  Destroyed = 'destroyed'         // Destroyed (cannot reuse)
+export interface VADResult {
+  isSpeech: boolean;
+  energy: number; // Energy in dB
+  confidence: number; // Confidence 0-1
+  silenceDuration: number; // ms
 }
 
 /**
- * Detailed connection state information
+ * Configuration for SpeechToText pipeline
  */
-export interface ConnectionState {
-  status: ConnectionStateType;
-  timestamp: number;
-  reason?: string;                // Why in this state
-  lastError?: Error;              // Last error encountered
+export interface STTConfig {
+  apiKey: string;
+  modelName?: string; // Default: 'whisper-1'
+  sampleRate?: number; // Default: 48000 Hz
+  language?: string; // Default: 'en' (auto-detect if not set)
+  enableVAD?: boolean; // Default: true
+  timeoutMs?: number; // Default: 30000 ms
 }
 
 /**
- * Represents a connection to a Discord voice channel
+ * Transcription result from Whisper API
  */
-export interface VoiceConnectionInfo {
-  guildId: string;
-  channelId: string;
-  userId: string;                 // Bot user ID
-  state: ConnectionState;
-  createdAt: number;
-  lastStatusChange: number;
-  rejoinAttempts: number;         // Number of reconnection attempts
-}
-
-// ============================================
-// Error Types
-// ============================================
-
-/**
- * Type for voice connection errors
- */
-export enum VoiceErrorType {
-  INVALID_GUILD = 'INVALID_GUILD',
-  INVALID_CHANNEL = 'INVALID_CHANNEL',
-  NO_PERMISSION = 'NO_PERMISSION',
-  ALREADY_CONNECTED = 'ALREADY_CONNECTED',
-  CONNECTION_TIMEOUT = 'CONNECTION_TIMEOUT',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  DISCORD_API_ERROR = 'DISCORD_API_ERROR',
-  INVALID_STATE = 'INVALID_STATE',
-  ADAPTER_CREATION_FAILED = 'ADAPTER_CREATION_FAILED'
+export interface TranscriptionResult {
+  text: string;
+  language: string;
+  confidence: number; // 0-1
+  duration: number; // ms
+  timestamp: number; // Unix timestamp when transcribed
+  segments?: {
+    start: number;
+    end: number;
+    text: string;
+  }[];
 }
 
 /**
- * Voice connection error with detailed context
+ * Statistics for STT performance monitoring
  */
-export class VoiceConnectionError extends Error {
-  type: VoiceErrorType;
-  guildId?: string;
-  channelId?: string;
-  originalError?: Error;
-  timestamp: number;
-
-  constructor(
-    type: VoiceErrorType,
-    message: string,
-    options?: {
-      guildId?: string;
-      channelId?: string;
-      originalError?: Error;
-    }
-  ) {
-    super(message);
-    this.name = 'VoiceConnectionError';
-    this.type = type;
-    this.guildId = options?.guildId;
-    this.channelId = options?.channelId;
-    this.originalError = options?.originalError;
-    this.timestamp = Date.now();
-  }
-}
-
-// ============================================
-// Events
-// ============================================
-
-/**
- * Events emitted by VoiceConnectionManager
- */
-export interface VoiceConnectionManagerEvents {
-  /**
-   * Emitted when connection state changes
-   */
-  stateChange(guildId: string, newState: ConnectionState, oldState?: ConnectionState): void;
-
-  /**
-   * Emitted when connection is ready
-   */
-  ready(guildId: string, connection: VoiceConnectionInfo): void;
-
-  /**
-   * Emitted when connection is disconnected
-   */
-  disconnected(guildId: string, reason: string): void;
-
-  /**
-   * Emitted when error occurs
-   */
-  error(guildId: string, error: VoiceConnectionError): void;
-
-  /**
-   * Emitted when reconnection attempt is made
-   */
-  reconnecting(guildId: string, attemptNumber: number): void;
-
-  /**
-   * Emitted when connection is destroyed
-   */
-  destroyed(guildId: string): void;
-}
-
-// ============================================
-// Options
-// ============================================
-
-/**
- * Options for VoiceConnectionManager initialization
- */
-export interface VoiceConnectionManagerOptions {
-  /**
-   * Maximum timeout for connection attempt (ms)
-   * Default: 15000 (15 seconds)
-   */
-  connectionTimeout?: number;
-
-  /**
-   * Maximum number of reconnection attempts
-   * Default: 3
-   */
-  maxRejoinAttempts?: number;
-
-  /**
-   * Enable debug logging
-   * Default: false
-   */
-  debug?: boolean;
-
-  /**
-   * Enable DAVE protocol for end-to-end encryption
-   * Default: true
-   */
-  daveEncryption?: boolean;
-
-  /**
-   * Whether to emit state change events
-   * Default: true
-   */
-  emitEvents?: boolean;
-}
-
-// ============================================
-// Existing Types (Updated)
-// ============================================
-
-export interface VoiceConfig {
-  guildId: string;
-  channelId: string;
-  userId: string;
-  connectionState?: ConnectionState;  // NEW
-  selfMute?: boolean;                // NEW
-  selfDeaf?: boolean;                // NEW
-}
-
-export interface AudioBuffer {
-  data: Buffer;
-  timestamp: number;
+export interface STTStats {
+  transcribed: number;
+  errors: number;
+  totalFrames: number;
+  avgLatencyMs: number;
+  framesPerSecond: number;
+  memoryMb: number;
+  lastTranscription?: number; // Unix timestamp
 }
