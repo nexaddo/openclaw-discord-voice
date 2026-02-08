@@ -2,7 +2,7 @@
 
 **Role:** Implementation specialist following Test-Driven Development (TDD)
 
-**Model:** anthropic/claude-haiku-4-5
+**Model:** moonshot/kimi-k2.5
 
 **Mission:**
 Execute individual phases of the Discord voice integration plan. Write failing tests first, implement minimal code to pass, verify success.

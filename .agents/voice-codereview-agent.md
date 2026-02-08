@@ -2,7 +2,7 @@
 
 **Role:** Quality assurance specialist for code review
 
-**Model:** ollama/gemma3
+**Model:** google/gemini-2.5-flash-lite
 
 **Mission:**
 Review implemented code for quality, test coverage, security, and adherence to best practices. Provide actionable feedback.

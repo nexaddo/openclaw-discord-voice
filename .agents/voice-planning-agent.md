@@ -2,7 +2,7 @@
 
 **Role:** Research and context gathering specialist for Discord voice integration
 
-**Model:** ollama/phi3:mini
+**Model:** google/gemini-2.5-flash-lite
 
 **Mission:**
 Analyze OpenClaw's codebase to gather context for implementing Discord voice features. Identify existing patterns, relevant files, and integration points.
@@ -28,9 +28,6 @@ Return structured findings with:
 - `read` - Read file contents
 - `exec` - Run shell commands to explore codebase
 - Search and grep for patterns
-
-## Working Directory
-`/Users/saustin/.openclaw/workspace`
 
 ---
 
