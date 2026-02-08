@@ -137,7 +137,10 @@ export class VoiceCommandPipeline {
   private sessions: Map<string, VoiceSession> = new Map();
   private activeRequests: Map<string, VoiceRequest> = new Map();
   private eventListeners: Map<keyof PipelineEvents, Function[]> = new Map();
-  private metrics: PipelineMetrics = {
+  private metrics: PipelineMetrics & {
+    totalRecoveryAttempts?: number;
+    successfulRecoveries?: number;
+  } = {
     activeSessions: 0,
     totalSessions: 0,
     concurrentLimitHits: 0,
@@ -146,6 +149,8 @@ export class VoiceCommandPipeline {
     recoverySuccessRate: 0,
     memoryUsage: 0,
     cpuUsage: 0,
+    totalRecoveryAttempts: 0,
+    successfulRecoveries: 0,
   };
   private errorRecoveryHandler: ErrorRecoveryHandler;
   private isInitialized: boolean = false;
@@ -153,6 +158,9 @@ export class VoiceCommandPipeline {
   // Component instances
   private sttInstance?: SpeechToText;
   private ttsInstance?: TextToSpeech;
+  
+  // Cleanup interval storage
+  private cleanupInterval?: NodeJS.Timer;
 
   constructor(config: VoiceCommandPipelineConfig) {
     this.config = {
@@ -192,6 +200,9 @@ export class VoiceCommandPipeline {
       this.ttsInstance = new TextToSpeech(this.config.ttsConfig);
 
       this.isInitialized = true;
+      
+      // Start session cleanup after initialization
+      this.startSessionCleanup();
     } catch (error: any) {
       throw new PipelineError(
         PipelineErrorCode.PIPELINE_INITIALIZATION_FAILED,
@@ -205,10 +216,19 @@ export class VoiceCommandPipeline {
    * Shutdown the pipeline
    */
   async shutdown(): Promise<void> {
+    // Clear cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+
     // End all active sessions
     for (const session of this.sessions.values()) {
       await this.endSession(session.sessionId, 'shutdown');
     }
+
+    // Clear event listeners
+    this.eventListeners.clear();
 
     // Cleanup components
     if (this.sttInstance) {
@@ -549,8 +569,16 @@ export class VoiceCommandPipeline {
     const startTime = Date.now();
 
     try {
-      // Mock agent call - in real implementation, call actual agent API
-      const response = await this.mockAgentCall(text, session);
+      // Use real agent if endpoint is configured
+      let response: AgentResponse;
+      
+      if (this.config.agentEndpoint && this.config.agentApiKey) {
+        // Real HTTP agent integration
+        response = await this.callRealAgent(text, session);
+      } else {
+        // Fallback to mock agent
+        response = await this.mockAgentCall(text, session);
+      }
 
       // Update metrics
       const latency = Date.now() - startTime;
@@ -570,6 +598,57 @@ export class VoiceCommandPipeline {
           originalError: error,
         }
       );
+    }
+  }
+
+  /**
+   * Call real agent API with HTTP integration
+   */
+  private async callRealAgent(text: string, session: VoiceSession): Promise<AgentResponse> {
+    if (!this.config.agentEndpoint || !this.config.agentApiKey) {
+      throw new Error('Agent endpoint or API key not configured');
+    }
+
+    try {
+      const timeout = this.config.agentTimeoutMs || 30000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(this.config.agentEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.config.agentApiKey}`,
+        },
+        body: JSON.stringify({
+          text,
+          sessionId: session.sessionId,
+          userId: session.userId,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Agent API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return {
+        text: data.text || data.response || text,
+        confidence: data.confidence || 0.9,
+        metadata: {
+          sessionId: session.sessionId,
+          processingTime: Date.now() - session.lastActivity,
+          ...data.metadata,
+        },
+      };
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Agent request timeout after ${this.config.agentTimeoutMs}ms`);
+      }
+      throw error;
     }
   }
 
@@ -664,14 +743,28 @@ export class VoiceCommandPipeline {
     }
 
     try {
+      // Track recovery attempt
+      if (!this.metrics.totalRecoveryAttempts) {
+        this.metrics.totalRecoveryAttempts = 0;
+      }
+      if (!this.metrics.successfulRecoveries) {
+        this.metrics.successfulRecoveries = 0;
+      }
+      
+      this.metrics.totalRecoveryAttempts++;
+
       // Try fallback response
       if (this.config.enableFallbackResponses) {
         const fallbackResponse = this.getFallbackResponse(error);
         const ttsResponse = await this.synthesizeSpeech(fallbackResponse, session);
         await this.playAudioResponse(ttsResponse.audio, session);
 
-        this.metrics.recoverySuccessRate =
-          (this.metrics.recoverySuccessRate + 1) / (this.metrics.errorRate + 1);
+        // Mark recovery as successful
+        this.metrics.successfulRecoveries++;
+        
+        // Calculate correct recovery rate: successes / attempts
+        this.metrics.recoverySuccessRate = 
+          this.metrics.successfulRecoveries / Math.max(1, this.metrics.totalRecoveryAttempts);
 
         return true;
       }
@@ -783,7 +876,7 @@ export class VoiceCommandPipeline {
    * Periodic cleanup of timed-out sessions
    */
   private startSessionCleanup(): void {
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       const now = Date.now();
       for (const [sessionId, session] of this.sessions) {
         if (now - session.lastActivity > this.config.sessionTimeoutMs) {
