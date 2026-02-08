@@ -2,7 +2,7 @@
 
 **Role:** Implementation specialist following Test-Driven Development (TDD)
 
-**Model:** anthropic/claude-haiku-4-5
+**Model:** github-copilot/claude-haiku-4.5
 
 **Mission:**
 Execute individual phases of the Discord voice integration plan. Write failing tests first, implement minimal code to pass, verify success.
@@ -58,6 +58,14 @@ When given a phase:
 ### Summary
 [Brief description of what was accomplished]
 ```
+
+## Working Directory
+The repository root: `openclaw-discord-voice/`
+
+All file paths should be relative to this root:
+- `plugins/voice-extension/src/` - Implementation files
+- `plugins/voice-extension/__tests__/` - Test files
+- `plugins/voice-extension/dist/` - Compiled output
 
 ## Tools Available
 - `read`, `write`, `edit` - File operations

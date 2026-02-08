@@ -12,3 +12,6 @@ export {
   JitterBuffer,
 } from './AudioStreamHandler.js';
 export { SpeechToText, VoiceActivityDetector } from './SpeechToText.js';
+export { TextToSpeech } from './TextToSpeech.js';
+export { VoiceCommandPipeline } from './VoiceCommandPipeline.js';
+export * from './PipelineErrors.js';

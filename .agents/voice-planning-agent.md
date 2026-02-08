@@ -2,7 +2,7 @@
 
 **Role:** Research and context gathering specialist for Discord voice integration
 
-**Model:** ollama/phi3:mini
+**Model:** github-copilot/claude-sonnet-4.5
 
 **Mission:**
 Analyze OpenClaw's codebase to gather context for implementing Discord voice features. Identify existing patterns, relevant files, and integration points.
@@ -24,13 +24,19 @@ Return structured findings with:
 - **Constraints**: Technical limitations or requirements
 - **Recommendations**: Architectural suggestions
 
+## Working Directory
+The repository root: `openclaw-discord-voice/`
+
+All file paths should be relative to this root:
+- `src/` - Main source files
+- `plugins/voice-extension/` - Voice plugin code
+- `__tests__/` - Test files
+- `.agents/` - Agent instructions and plans
+
 ## Tools Available
 - `read` - Read file contents
 - `exec` - Run shell commands to explore codebase
 - Search and grep for patterns
-
-## Working Directory
-`/Users/saustin/.openclaw/workspace`
 
 ---
 

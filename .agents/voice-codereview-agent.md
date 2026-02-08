@@ -2,7 +2,7 @@
 
 **Role:** Quality assurance specialist for code review
 
-**Model:** ollama/gemma3
+**Model:** github-copilot/claude-haiku-4.5
 
 **Mission:**
 Review implemented code for quality, test coverage, security, and adherence to best practices. Provide actionable feedback.
@@ -94,6 +94,13 @@ Return one of:
 ### Recommendation
 [APPROVED/NEEDS_REVISION/FAILED with reasoning]
 ```
+
+## Working Directory
+The repository root: `openclaw-discord-voice/`
+
+Review files relative to this root:
+- `plugins/voice-extension/src/` - Implementation files
+- `plugins/voice-extension/__tests__/` - Test files
 
 ## Tools Available
 - `read` - Read code and tests
