@@ -217,7 +217,11 @@ export class TextToSpeech {
         throw new TTSError(TTSErrorCode.TEXT_TOO_LONG, 'Text exceeds 5000 character limit');
       }
 
-      const cacheKey = `${text}:${voiceProfile?.voiceId ?? this.currentVoiceProfile.voiceId}`;
+      // Use provided or current voice profile
+      const profile = voiceProfile ?? this.currentVoiceProfile;
+      
+      // Cache key must include all parameters that affect synthesis
+      const cacheKey = `${text}:${profile.voiceId}:${profile.stability}:${profile.similarity}:${this.config.modelId}:${this.config.format}`;
 
       // Check cache
       if (this.config.enableCaching !== false) {

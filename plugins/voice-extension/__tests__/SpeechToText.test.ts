@@ -11,7 +11,7 @@ import {
   TranscriptionResult,
   STTConfig,
   VADConfig,
-} from '../src/SpeechToText.js';
+} from '../src/SpeechToText';
 
 // ============================================================
 // SECTION A: VoiceActivityDetector Initialization (TC-001-006)
