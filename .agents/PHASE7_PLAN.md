@@ -54,7 +54,9 @@ Phase 7 integrates the voice system into the Discord plugin with slash commands 
 
 ---
 
-## 📁 Project Structure
+## 📁 Target Project Structure (to be created in implementation PR)
+
+**Note:** The following file structure is planned for the Phase 7 implementation PR. These files will be created from this specification.
 
 ```
 plugins/
