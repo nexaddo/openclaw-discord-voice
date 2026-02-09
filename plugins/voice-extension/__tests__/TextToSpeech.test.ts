@@ -245,7 +245,7 @@ describe('TextToSpeech (Phase 5) - TTS Pipeline', () => {
 
     it('TC-C05: convertWAVtoPCM() extracts audio data from WAV', async () => {
       const response = await tts.synthesize('Test');
-      const pcmData = await tts.convertWAVtoPCM(response.audio);
+      const pcmData = await tts.convertWAVtoPCM(Buffer.from(response.audio));
       expect(pcmData).toBeInstanceOf(Float32Array);
       expect(pcmData.length).toBeGreaterThan(0);
     });
@@ -540,7 +540,7 @@ describe('TextToSpeech (Phase 5) - TTS Pipeline', () => {
     it('TC-H03: Full pipeline: synthesize → convert → encode produces valid Opus', async () => {
       // Simulate full TTS to Opus pipeline
       const response = await tts.synthesize('Hello Discord');
-      const pcmData = await tts.convertWAVtoPCM(response.audio);
+      const pcmData = await tts.convertWAVtoPCM(Buffer.from(response.audio));
 
       // Extract first frame (960 samples × 2 channels = 1920)
       const firstFrame = new Float32Array(1920);

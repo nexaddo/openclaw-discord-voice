@@ -222,7 +222,7 @@ export class VoiceCommandPipeline {
   async shutdown(): Promise<void> {
     // Clear cleanup interval
     if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
+      clearInterval(this.cleanupInterval as NodeJS.Timeout);
       this.cleanupInterval = undefined;
     }
 
@@ -609,17 +609,17 @@ export class VoiceCommandPipeline {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Agent API error: ${response.status} ${response.statusText}`);
+              throw new Error(`Agent API error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as Record<string, unknown>;
       return {
-        text: data.text || data.response || text,
-        confidence: data.confidence || 0.9,
+        text: (data.text || data.response || text) as string,
+        confidence: (data.confidence || 0.9) as number,
         metadata: {
           sessionId: session.sessionId,
           processingTime: Date.now() - session.lastActivity,
-          ...data.metadata,
+          ...(data.metadata || {}),
         },
       };
     } catch (error: any) {
