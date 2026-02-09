@@ -13,7 +13,8 @@ import {
   DiscordPluginError,
   DiscordPluginErrorType,
   ICommandHandler,
- DiscordPluginConfig } from '../types.js';
+  DiscordPluginConfig,
+} from '../types.js';
 import { GuildStateManager } from '../state/GuildStateManager.js';
 
 /**

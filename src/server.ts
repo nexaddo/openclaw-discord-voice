@@ -120,13 +120,13 @@ class VoiceServer {
     const uptime = Math.floor((Date.now() - this.startTime) / 1000);
     const memUsage = process.memoryUsage();
     const memPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
-    
+
     // Simulate CPU usage (in production, use os.cpus() with sampling)
     const cpuPercent = this.estimateCpuUsage();
 
     // Determine status based on checks
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-    
+
     if (memPercent > 80 || cpuPercent > 70) {
       status = 'degraded';
     }
@@ -167,7 +167,7 @@ class VoiceServer {
     // Discord voice connections counter
     output += '# HELP discord_voice_connect_total Discord voice connections\n';
     output += '# TYPE discord_voice_connect_total counter\n';
-    
+
     if (this.metricsData.discord_voice_connect_total.size === 0) {
       output += 'discord_voice_connect_total{guild_id="default",status="success"} 0\n';
     } else {
@@ -181,7 +181,7 @@ class VoiceServer {
     // Active pipeline sessions gauge
     output += '# HELP pipeline_active_sessions Active voice sessions\n';
     output += '# TYPE pipeline_active_sessions gauge\n';
-    
+
     if (this.metricsData.pipeline_active_sessions.size === 0) {
       output += 'pipeline_active_sessions{guild_id="default"} 0\n';
     } else {
@@ -195,9 +195,9 @@ class VoiceServer {
     // Request duration histogram
     output += '# HELP pipeline_request_duration_seconds Request latency\n';
     output += '# TYPE pipeline_request_duration_seconds histogram\n';
-    
+
     const phases = ['stt', 'llm', 'tts'];
-    phases.forEach(phase => {
+    phases.forEach((phase) => {
       output += `pipeline_request_duration_seconds_bucket{phase="${phase}",le="0.5"} 15\n`;
       output += `pipeline_request_duration_seconds_bucket{phase="${phase}",le="1.0"} 28\n`;
       output += `pipeline_request_duration_seconds_bucket{phase="${phase}",le="+Inf"} 30\n`;

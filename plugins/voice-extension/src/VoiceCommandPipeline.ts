@@ -798,12 +798,12 @@ export class VoiceCommandPipeline {
     await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 200));
 
     // Mock responses based on input
-    let response = `I understand you said: ${  text}`;
+    let response = `I understand you said: ${text}`;
 
     if (text.toLowerCase().includes('hello')) {
       response = 'Hello! How can I help you today?';
     } else if (text.toLowerCase().includes('time')) {
-      response = `The current time is ${  new Date().toLocaleTimeString()}`;
+      response = `The current time is ${new Date().toLocaleTimeString()}`;
     } else if (text.toLowerCase().includes('weather')) {
       response = "I'm sorry, I don't have access to weather information right now.";
     }

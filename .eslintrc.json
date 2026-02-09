@@ -3,19 +3,13 @@
     "node": true,
     "es2021": true
   },
-  "extends": [
-    "airbnb-base",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
+  "extends": ["airbnb-base", "plugin:@typescript-eslint/recommended", "prettier"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
+  "plugins": ["@typescript-eslint"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": [
@@ -32,26 +26,14 @@
     "no-console": [
       "warn",
       {
-        "allow": [
-          "warn",
-          "error"
-        ]
+        "allow": ["warn", "error"]
       }
     ],
     "no-param-reassign": [
       "warn",
       {
         "props": true,
-        "ignorePropertyModificationsFor": [
-          "acc",
-          "e",
-          "ctx",
-          "req",
-          "request",
-          "res",
-          "response",
-          "$scope"
-        ]
+        "ignorePropertyModificationsFor": ["acc", "e", "ctx", "req", "request", "res", "response", "$scope"]
       }
     ],
     "no-plusplus": "off",
@@ -82,11 +64,5 @@
       }
     ]
   },
-  "ignorePatterns": [
-    "dist",
-    "node_modules",
-    "build",
-    "coverage",
-    "*.js"
-  ]
+  "ignorePatterns": ["dist", "node_modules", "build", "coverage", "*.js"]
 }

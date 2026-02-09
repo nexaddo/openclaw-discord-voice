@@ -1,5 +1,5 @@
 /**
- * Server Endpoint Tests  
+ * Server Endpoint Tests
  * Comprehensive tests for health, metrics, and probe endpoints
  * 16 new tests covering all endpoint requirements per Phase 8b spec
  */

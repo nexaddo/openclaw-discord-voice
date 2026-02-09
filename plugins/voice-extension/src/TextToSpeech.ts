@@ -250,7 +250,7 @@ export class TextToSpeech {
           lastError = error;
           if (attempt < (this.config.maxRetries ?? 3)) {
             // Wait before retry (exponential backoff)
-            await this.delay(2**attempt * 100);
+            await this.delay(2 ** attempt * 100);
           }
         }
       }
@@ -333,7 +333,7 @@ export class TextToSpeech {
     const dataSize = audioBuffer.length - 44;
     const bytesPerSample = 2; // 16-bit PCM
     const channels = 2;
-    const {sampleRate} = this.config;
+    const { sampleRate } = this.config;
 
     const samples = dataSize / bytesPerSample / channels;
     const duration = samples / sampleRate;

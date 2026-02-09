@@ -366,7 +366,7 @@ export class RetryManager {
    * Calculate delay with exponential backoff
    */
   private calculateDelay(attempt: number): number {
-    const delay = this.config.baseDelayMs * this.config.backoffMultiplier**attempt;
+    const delay = this.config.baseDelayMs * this.config.backoffMultiplier ** attempt;
     return Math.min(delay, this.config.maxDelayMs);
   }
 
