@@ -44,6 +44,22 @@ jobs:
         run: npm run test
         continue-on-error: false
 
+      - name: Generate coverage report
+        run: npm run test:coverage
+        continue-on-error: false
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Security audit
+        run: npm audit --audit-level=high || true
+        continue-on-error: true
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
