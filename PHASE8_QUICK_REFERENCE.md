@@ -77,8 +77,8 @@ Manual Approval → Deploy Production (Blue-Green)
 **Error Tracking:** Sentry integration
 
 **Alerting:**
-- **Critical** (PagerDuty): Error rate >5%, latency >2s, health check fail
-- **Warning** (Slack): Error rate >1%, latency >1s, memory >80%
+- **Critical** (Discord #alerts-critical): Error rate >5%, latency >2s, health check fail
+- **Warning** (Discord #alerts-warning): Error rate >1%, latency >1s, memory >80%
 
 ---
 

@@ -360,6 +360,8 @@ Ready for Next Deploy
 - Latency >2000ms sustained for 1 minute
 - Discord API connection failures
 
+**Rollback Alert:** Posted to Discord #alerts-critical with details
+
 **Rollback Steps:**
 1. Detect failure condition
 2. Switch traffic back to Green (old version)
@@ -468,14 +470,14 @@ Sentry.init({
 
 ### Alerting Rules
 
-**Critical Alerts (PagerDuty):**
+**Critical Alerts (Discord #alerts-critical):**
 - Error rate >5% in 5 minutes
 - Response latency >2000ms (p95) in 5 minutes
 - Health check failure
 - Discord API connection loss
 - Database connection loss
 
-**Warning Alerts (Slack #alerts):**
+**Warning Alerts (Discord #alerts-warning):**
 - Error rate >1% in 5 minutes
 - Response latency >1000ms (p95) in 5 minutes
 - Memory usage >80%
@@ -627,6 +629,7 @@ HEALTH_CHECK_INTERVAL=30s
 | Staging/prod misconfiguration | Data loss/corruption | Low | Infrastructure-as-Code, dry-run before apply |
 | Monitoring not capturing data | Blind spot in production | Medium | Test monitoring in staging first |
 | Rollback fails | Extended downtime | Low | Test rollback regularly, keep old version running |
+| Discord outage | Can't deploy/communicate | Low | Have manual runbook, communicate via GitHub |
 
 ---
 
