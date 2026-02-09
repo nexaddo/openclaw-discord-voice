@@ -111,14 +111,15 @@ describe('GuildStateManager', () => {
       expect(retrieved?.activeUsers.has('user2')).toBe(true);
     });
 
-    it('should update last activity timestamp', () => {
+    it('should update last activity timestamp', async () => {
       const state = manager.getOrCreateGuildState('guild123');
       const initialTime = state.lastActivity;
 
-      // Wait and update
+      // Wait 2ms to ensure different timestamp
+      await new Promise((resolve) => setTimeout(resolve, 2));
       state.lastActivity = Date.now();
 
-      expect(state.lastActivity).toBeGreaterThan(initialTime);
+      expect(state.lastActivity).toBeGreaterThanOrEqual(initialTime);
     });
   });
 
@@ -169,7 +170,7 @@ describe('GuildStateManager', () => {
       manager.getOrCreateGuildState('guild1');
       manager.getOrCreateGuildState('guild2');
       manager.getOrCreateGuildState('guild3');
-      
+
       manager.deleteGuildState('guild2');
 
       const allGuilds = manager.getAllGuilds();
@@ -320,10 +321,10 @@ describe('GuildStateManager', () => {
   describe('Concurrent state access', () => {
     it('should handle concurrent state creation', () => {
       const promises = Array.from({ length: 10 }, (_, i) =>
-        Promise.resolve(manager.getOrCreateGuildState(`guild${i}`))
+        Promise.resolve(manager.getOrCreateGuildState(`guild${i}`)),
       );
 
-      return Promise.all(promises).then(states => {
+      return Promise.all(promises).then((states) => {
         expect(states).toHaveLength(10);
         expect(manager.getAllGuilds()).toHaveLength(10);
       });

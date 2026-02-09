@@ -23,8 +23,9 @@ Phase 7 integrates the voice system into the Discord plugin with slash commands 
 ## 🎯 Success Criteria
 
 ### Functional Requirements
+
 - [ ] `/voice ask "question"` command works - asks Rue in voice channel
-- [ ] `/voice start` command works - starts voice mode  
+- [ ] `/voice start` command works - starts voice mode
 - [ ] `/voice stop` command works - stops voice mode
 - [ ] Voice events handled: user joined, user left, channel disconnected
 - [ ] Guild state persists across bot restarts
@@ -32,6 +33,7 @@ Phase 7 integrates the voice system into the Discord plugin with slash commands 
 - [ ] Error messages clear to users
 
 ### Testing Requirements
+
 - [ ] 40+ test cases covering all scenarios
 - [ ] Command handler tests (15+ cases)
 - [ ] Event handler tests (15+ cases)
@@ -40,6 +42,7 @@ Phase 7 integrates the voice system into the Discord plugin with slash commands 
 - [ ] Code coverage >80%
 
 ### Code Quality
+
 - [ ] TypeScript strict mode
 - [ ] ESLint passes (0 errors)
 - [ ] No console.log (use proper logging)
@@ -47,6 +50,7 @@ Phase 7 integrates the voice system into the Discord plugin with slash commands 
 - [ ] Documentation complete
 
 ### Integration with Phase 6
+
 - [ ] Slash commands correctly route to VoiceCommandPipeline
 - [ ] Error handling maps pipeline errors to Discord messages
 - [ ] Voice responses played through Discord audio
@@ -116,9 +120,11 @@ plugins/
 ## 🔧 Slash Commands
 
 ### `/voice ask "question"`
+
 **Purpose:** Ask Rue a question in voice channel  
 **Usage:** `/voice ask "What's the weather?"`  
 **Behavior:**
+
 1. Check if user is in voice channel
 2. Check bot has permission to join that channel
 3. Get question text
@@ -127,14 +133,17 @@ plugins/
 6. Return status to user
 
 **Response Options:**
+
 - "🎤 Asking Rue..." (while processing)
 - "✅ Response played" (success)
 - "❌ Error: [message]" (failure)
 
 ### `/voice start`
+
 **Purpose:** Start voice listening mode  
 **Usage:** `/voice start`  
 **Behavior:**
+
 1. Check if user is in voice channel
 2. Join voice channel (bot)
 3. Enable continuous listening (Phase 6 feature)
@@ -142,19 +151,23 @@ plugins/
 5. Confirm to user
 
 **Response:**
+
 - "✅ Voice mode started in #channel"
 - "❌ Error: [message]"
 
 ### `/voice stop`
+
 **Purpose:** Stop voice listening mode  
 **Usage:** `/voice stop`  
 **Behavior:**
+
 1. Check if bot is connected in this guild
 2. Leave voice channel
 3. Update guild state
 4. Confirm to user
 
 **Response:**
+
 - "✅ Voice mode stopped"
 - "❌ Error: [message]"
 
@@ -162,31 +175,39 @@ plugins/
 
 ## 📡 Event Handlers
 
-### `guildVoiceStateUpdate` 
+### `guildVoiceStateUpdate`
+
 **Trigger:** User joins/leaves voice channel  
 **Behavior:**
+
 - If user joins: Announce in text channel (optional feature)
 - If user leaves: Continue listening or notify
 - Track active speakers for Phase 6 integration
 
 ### `voiceChannelDelete`
+
 **Trigger:** Voice channel is deleted  
 **Behavior:**
+
 - Check if bot was connected to deleted channel
 - Disconnect gracefully
 - Update guild state
 - Notify users if applicable
 
 ### `voiceStateUpdate` (bot)
+
 **Trigger:** Bot's voice state changes  
 **Behavior:**
+
 - Update guild state
 - Emit "bot disconnected" if unexpected
 - Handle reconnection logic
 
 ### `guildDelete`
+
 **Trigger:** Bot removed from guild  
 **Behavior:**
+
 - Clean up guild state
 - Close connections
 - Log event
@@ -196,20 +217,22 @@ plugins/
 ## 💾 Guild State Management
 
 ### State Schema
+
 ```typescript
 interface GuildVoiceState {
   guildId: string;
-  channelId: string | null;        // Current voice channel (null = not connected)
+  channelId: string | null; // Current voice channel (null = not connected)
   voiceMode: 'off' | 'listening' | 'active';
   connectedAt: number | null;
-  activeUsers: Set<string>;        // Users in voice channel
-  lastActivity: number;            // Last user activity
+  activeUsers: Set<string>; // Users in voice channel
+  lastActivity: number; // Last user activity
   pipelineStatus: 'ready' | 'processing' | 'error';
-  errorCount: number;              // For monitoring
+  errorCount: number; // For monitoring
 }
 ```
 
 ### State Persistence
+
 - **Storage:** JSON file + in-memory Map
 - **Location:** `./data/guild-states.json` (or configurable)
 - **Sync:** On every state change + periodic save
@@ -222,6 +245,7 @@ interface GuildVoiceState {
 ### Command Tests (15+ cases)
 
 **Voice Ask Command**
+
 1. ✅ Command parses correctly
 2. ✅ User in voice channel - success path
 3. ❌ User NOT in voice channel - error
@@ -231,41 +255,24 @@ interface GuildVoiceState {
 7. ✅ Response played successfully
 8. ❌ Pipeline error handling
 
-**Voice Start Command**
-9. ✅ Start in voice channel
-10. ❌ Start when not in channel
-11. ❌ Already connected - skip
-12. ✅ State persisted
-13. ❌ Permission denied
+**Voice Start Command** 9. ✅ Start in voice channel 10. ❌ Start when not in channel 11. ❌ Already connected - skip 12. ✅ State persisted 13. ❌ Permission denied
 
-**Voice Stop Command**
-14. ✅ Stop when connected
-15. ❌ Stop when not connected
+**Voice Stop Command** 14. ✅ Stop when connected 15. ❌ Stop when not connected
 
 ### Event Handler Tests (15+ cases)
 
 **Voice State Updates**
+
 1. ✅ User joins - tracked
 2. ✅ User leaves - tracked
 3. ✅ Bot joins - state updated
 4. ✅ Bot leaves - state updated
 
-**Channel Delete**
-5. ✅ Bot connected to deleted channel
-6. ✅ Bot disconnected before delete
+**Channel Delete** 5. ✅ Bot connected to deleted channel 6. ✅ Bot disconnected before delete
 
-**Guild Delete**
-7. ✅ Guild state cleaned up
-8. ✅ Connections closed
+**Guild Delete** 7. ✅ Guild state cleaned up 8. ✅ Connections closed
 
-**State Changes**
-9. ✅ Transition off → listening
-10. ✅ Transition listening → active
-11. ✅ Transition active → off
-12. ✅ Invalid transitions rejected
-13. ✅ Error state recovery
-14. ✅ Concurrent state updates handled
-15. ✅ State persistence verified
+**State Changes** 9. ✅ Transition off → listening 10. ✅ Transition listening → active 11. ✅ Transition active → off 12. ✅ Invalid transitions rejected 13. ✅ Error state recovery 14. ✅ Concurrent state updates handled 15. ✅ State persistence verified
 
 ### State Management Tests (10+ cases)
 
@@ -314,23 +321,25 @@ Response Handler
 ```
 
 ### PipelineAdapter Interface
+
 ```typescript
 interface PipelineAdapter {
   // Request audio from Phase 6
   requestAudio(guildId: string): Promise<AudioData>;
-  
+
   // Send response to Phase 6
   sendResponse(guildId: string, text: string): Promise<AudioData>;
-  
+
   // Start continuous listening
   startListening(guildId: string): Promise<void>;
-  
+
   // Stop listening
   stopListening(guildId: string): Promise<void>;
 }
 ```
 
 ### Error Mapping
+
 - **Pipeline Timeout** → "Rue is taking a while... please try again"
 - **STT Error** → "Couldn't understand audio, please try again"
 - **Agent Error** → "Rue encountered an error"
@@ -341,39 +350,46 @@ interface PipelineAdapter {
 ## 📝 Implementation Phases
 
 ### Phase 7a: Test Suite & Types (30 minutes)
+
 1. Create test files with all 40+ test cases (skeleton)
 2. Define all types
 3. Verify test framework works
 
 ### Phase 7b: Discord Commands (1 hour)
+
 1. Implement `/voice ask` command
 2. Implement `/voice start` command
 3. Implement `/voice stop` command
 4. Command tests pass
 
 ### Phase 7c: Event Handlers (45 minutes)
+
 1. Implement VoiceStateUpdate handler
 2. Implement ChannelDelete handler
 3. Implement GuildDelete handler
 4. Event tests pass
 
 ### Phase 7d: State Management (45 minutes)
+
 1. Implement GuildStateManager
 2. Implement StateStore (persistence)
 3. State tests pass
 
 ### Phase 7e: Error Handling & Utils (30 minutes)
+
 1. Implement error handling utilities
 2. Implement Discord embeds
 3. Implement logging
 
 ### Phase 7f: Integration with Phase 6 (1 hour - WAIT for Phase 6)
+
 1. Implement PipelineAdapter
 2. Connect commands to pipeline
 3. Integration tests pass
 4. **NOTE:** Start this only after Phase 6 PR is merged
 
 ### Phase 7g: Testing & Documentation (45 minutes)
+
 1. Run full test suite
 2. Fix any failures
 3. Document API
@@ -384,6 +400,7 @@ interface PipelineAdapter {
 ## 🚀 Deployment Readiness
 
 ### Before PR
+
 - [ ] All 40+ tests passing
 - [ ] No TypeScript errors
 - [ ] ESLint passes
@@ -391,12 +408,14 @@ interface PipelineAdapter {
 - [ ] No hardcoded values (use env vars)
 
 ### Before Merge
+
 - [ ] Code review approved
 - [ ] Phase 6 integration verified (if merged)
 - [ ] Manual testing in Discord
 - [ ] Error scenarios tested
 
 ### Production Checklist
+
 - [ ] Permissions properly scoped
 - [ ] Rate limiting considered
 - [ ] State persistence working
@@ -408,6 +427,7 @@ interface PipelineAdapter {
 ## 🔗 Dependencies & Assumptions
 
 ### Phase Boundaries
+
 - **Phase 1-3:** Voice Extension (DONE)
 - **Phase 4:** STT Integration (pending)
 - **Phase 5:** TTS Integration (pending)
@@ -416,11 +436,13 @@ interface PipelineAdapter {
 - **Phase 8:** CI/CD & Deployment (pending)
 
 ### External Dependencies
+
 - Discord.js: For bot interactions
 - OpenClaw Framework: For plugin structure
 - Vitest: For testing
 
 ### Environment Variables
+
 ```
 DISCORD_TOKEN=your_bot_token
 GUILD_ID=your_test_guild_id
@@ -432,19 +454,20 @@ DEBUG=false
 
 ## 📊 Risk Assessment
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|-----------|
-| Phase 6 not ready | Medium | High | Wait for PR, implement rest in parallel |
-| Concurrent state updates | Low | High | Use locks/queues, comprehensive tests |
-| Memory leaks | Low | Medium | Cleanup in handlers, periodic audits |
-| Discord API rate limits | Low | Medium | Batch operations, cache responses |
-| Permission issues | Low | Medium | Test matrix, clear error messages |
+| Risk                     | Probability | Impact | Mitigation                              |
+| ------------------------ | ----------- | ------ | --------------------------------------- |
+| Phase 6 not ready        | Medium      | High   | Wait for PR, implement rest in parallel |
+| Concurrent state updates | Low         | High   | Use locks/queues, comprehensive tests   |
+| Memory leaks             | Low         | Medium | Cleanup in handlers, periodic audits    |
+| Discord API rate limits  | Low         | Medium | Batch operations, cache responses       |
+| Permission issues        | Low         | Medium | Test matrix, clear error messages       |
 
 ---
 
 ## ✅ Acceptance Criteria
 
 ### Definition of Done
+
 - [ ] All 40+ tests passing
 - [ ] Code coverage >80%
 - [ ] No TypeScript/ESLint errors
@@ -456,6 +479,7 @@ DEBUG=false
 - [ ] Documentation complete
 
 ### Manual Testing Checklist
+
 - [ ] `/voice ask` in test guild works
 - [ ] `/voice start` connects bot to voice
 - [ ] `/voice stop` disconnects bot
@@ -472,7 +496,8 @@ DEBUG=false
 **Current Status:** Ready for Implementation  
 **Next Action:** Start with test suite creation  
 **Blockers:** None (Phase 6 integration deferred until merged)  
-**Timeline:** 
+**Timeline:**
+
 - Start: 2026-02-06 22:40
 - Complete tests/types: 2026-02-07 09:00
 - Complete implementation: 2026-02-07 16:00

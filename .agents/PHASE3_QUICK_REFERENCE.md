@@ -9,6 +9,7 @@
 ## 🎯 The Job
 
 Build `AudioStreamHandler` class that:
+
 1. **Encodes** PCM audio → Opus packets
 2. **Decodes** Opus packets → PCM audio
 3. **Buffers** incoming frames (jitter buffer)
@@ -20,6 +21,7 @@ Build `AudioStreamHandler` class that:
 ## 📦 Core Classes
 
 ### AudioStreamHandler (Main)
+
 ```typescript
 constructor(config: AudioStreamConfig)
 initialize(): Promise<void>        // Start codec
@@ -46,6 +48,7 @@ getLatency(): number
 ```
 
 ### JitterBuffer (Dependency)
+
 ```typescript
 constructor(maxFrames, targetLatency, sampleRate)
 enqueue(frame): void
@@ -54,6 +57,7 @@ getHealth(): BufferHealth
 ```
 
 ### CircularAudioBuffer (Dependency)
+
 ```typescript
 constructor(capacity, frameSize)
 writeFrame(frame): void
@@ -65,72 +69,76 @@ getOccupancy(): number
 
 ## 🔧 Audio Specs
 
-| Setting | Value | Why |
-|---------|-------|-----|
-| Sample Rate | 48,000 Hz | Discord standard |
-| Channels | 2 (stereo) | Discord default |
-| Frame Size | 960 samples | 20ms @ 48kHz |
-| Frame Duration | 20 ms | Fixed |
-| Bitrate | 128 kbps | Opus default (VBR) |
-| Opus Complexity | 5/10 | Balance quality/CPU |
-| FEC | true | Recover lost packets |
-| DTX | false | Keep audio flowing |
+| Setting         | Value       | Why                  |
+| --------------- | ----------- | -------------------- |
+| Sample Rate     | 48,000 Hz   | Discord standard     |
+| Channels        | 2 (stereo)  | Discord default      |
+| Frame Size      | 960 samples | 20ms @ 48kHz         |
+| Frame Duration  | 20 ms       | Fixed                |
+| Bitrate         | 128 kbps    | Opus default (VBR)   |
+| Opus Complexity | 5/10        | Balance quality/CPU  |
+| FEC             | true        | Recover lost packets |
+| DTX             | false       | Keep audio flowing   |
 
 ---
 
 ## 💾 Data Structures (Copy-Paste)
 
 ### AudioFrame
+
 ```typescript
 interface AudioFrame {
-  timestamp: number              // ms (monotonic)
-  sequenceNumber: number         // Frame counter
-  ssrc: number                   // RTP sync source
-  data: Float32Array             // 1920 samples (stereo)
-  sampleCount: number            // 960 typical
-  duration: number               // 20 ms
+  timestamp: number; // ms (monotonic)
+  sequenceNumber: number; // Frame counter
+  ssrc: number; // RTP sync source
+  data: Float32Array; // 1920 samples (stereo)
+  sampleCount: number; // 960 typical
+  duration: number; // 20 ms
 }
 ```
 
 ### OpusFrame
+
 ```typescript
 interface OpusFrame {
-  timestamp: number
-  sequenceNumber: number
-  ssrc: number
-  data: Uint8Array               // Variable size (20-60 bytes)
-  size: number
+  timestamp: number;
+  sequenceNumber: number;
+  ssrc: number;
+  data: Uint8Array; // Variable size (20-60 bytes)
+  size: number;
 }
 ```
 
 ### BufferHealth
+
 ```typescript
 interface BufferHealth {
-  occupancy: number              // Frames in buffer
-  capacity: number               // Max capacity
-  percentFull: number            // 0-100
-  isUnderrun: boolean            // < 2 frames
-  isOverrun: boolean             // > 90% full
-  jitter: number                 // ms variance
-  recommendation: string         // "optimal"|"low"|"high"|"critical"
+  occupancy: number; // Frames in buffer
+  capacity: number; // Max capacity
+  percentFull: number; // 0-100
+  isUnderrun: boolean; // < 2 frames
+  isOverrun: boolean; // > 90% full
+  jitter: number; // ms variance
+  recommendation: string; // "optimal"|"low"|"high"|"critical"
 }
 ```
 
 ### AudioStreamStats
+
 ```typescript
 interface AudioStreamStats {
-  framesProcessed: number
-  framesEncoded: number
-  framesDecoded: number
-  framesDropped: number
-  frameLoss: number              // %
-  jitterMs: number
-  latencyMs: number              // E2E
-  bufferOccupancy: number
-  captureUnderrun: number
-  playbackUnderrun: number
-  cpuUsage: number               // Est. %
-  codecQuality: number           // 0-100
+  framesProcessed: number;
+  framesEncoded: number;
+  framesDecoded: number;
+  framesDropped: number;
+  frameLoss: number; // %
+  jitterMs: number;
+  latencyMs: number; // E2E
+  bufferOccupancy: number;
+  captureUnderrun: number;
+  playbackUnderrun: number;
+  cpuUsage: number; // Est. %
+  codecQuality: number; // 0-100
 }
 ```
 
@@ -174,6 +182,7 @@ enum AudioErrorCode {
 ## 🧵 Key Algorithms
 
 ### Encoding (PCM → Opus)
+
 ```
 Input: Float32Array [960 × 2 samples] = 20ms audio
   ↓
@@ -187,6 +196,7 @@ Return with metadata (timestamp, seq, SSRC)
 ```
 
 ### Decoding (Opus → PCM)
+
 ```
 Input: Uint8Array (Opus packet)
   ↓
@@ -202,6 +212,7 @@ Return with metadata
 ```
 
 ### Jitter Buffer
+
 ```
 Frame arrives with RTP timestamp (not wall-clock)
   ↓
@@ -217,10 +228,11 @@ Monitor jitter → adapt target_latency if needed
 ```
 
 ### Circular Buffer
+
 ```
 Write: [Frame 0] [Frame 1] ... [Frame 99] [Frame 0 next] ...
        ↑write_head                           ↑
-       
+
 Read:  [Frame 0] [Frame 1] ... [Frame 99] [Frame 0 next] ...
        ↑read_head
 
@@ -235,6 +247,7 @@ Empty: occupancy == 0
 ## 🚀 Integration Points
 
 ### Sending (Capture → Encode)
+
 ```typescript
 // Call this from VoiceConnectionManager
 const opusData = await handler.encodeFrame(pcmData);
@@ -242,6 +255,7 @@ const opusData = await handler.encodeFrame(pcmData);
 ```
 
 ### Receiving (Decode → Play)
+
 ```typescript
 // From VoiceSocket.on('rtp')
 const pcmData = await handler.decodeFrame(opusPayload);
@@ -265,21 +279,22 @@ const pcmData = await handler.decodeFrame(opusPayload);
 
 ## 📊 Performance Minimums
 
-| Metric | Target |
-|--------|--------|
-| Encode latency | < 5 ms |
-| Decode latency | < 5 ms |
-| Buffer latency | 40 ms |
-| Total E2E | < 100 ms |
-| CPU per instance | < 10% |
-| Memory footprint | < 50 MB |
-| Jitter handling | < 20 ms RMS |
+| Metric           | Target      |
+| ---------------- | ----------- |
+| Encode latency   | < 5 ms      |
+| Decode latency   | < 5 ms      |
+| Buffer latency   | 40 ms       |
+| Total E2E        | < 100 ms    |
+| CPU per instance | < 10%       |
+| Memory footprint | < 50 MB     |
+| Jitter handling  | < 20 ms RMS |
 
 ---
 
 ## 🧪 Test Suite
 
 **48 test cases** across:
+
 - ✅ Initialization (6 tests)
 - ✅ Capture (6 tests)
 - ✅ Encoding (8 tests)
@@ -289,6 +304,7 @@ const pcmData = await handler.decodeFrame(opusPayload);
 - ✅ Error handling (6 tests)
 
 **Critical tests to prioritize:**
+
 - TC-013: encodeFrame() returns valid Opus
 - TC-021: decodeFrame() returns valid PCM
 - TC-029: enqueueFrame() buffers correctly
@@ -300,12 +316,14 @@ const pcmData = await handler.decodeFrame(opusPayload);
 ## 📝 Dependencies
 
 **From Phase 2 (VoiceConnectionManager):**
+
 - RTP packet structure
 - SSRC (Sync Source) value
 - Sequence number / timestamp management
 - UDP socket interface
 
 **External libraries:**
+
 - `libopus` wrapper or `node-opus` package
 - Native audio APIs (Web Audio API or PortAudio)
 - BufferGeometry / circular queue utility
@@ -352,6 +370,7 @@ const defaultConfig: AudioStreamConfig = {
 ## 📞 Contact Phase 2
 
 **VoiceConnectionManager** expects:
+
 ```typescript
 // Outgoing
 handler.encodeFrame(pcm) → Promise<Uint8Array>

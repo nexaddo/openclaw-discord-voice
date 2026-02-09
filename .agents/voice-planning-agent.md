@@ -8,6 +8,7 @@
 Analyze OpenClaw's codebase to gather context for implementing Discord voice features. Identify existing patterns, relevant files, and integration points.
 
 ## Responsibilities
+
 - Research OpenClaw plugin architecture
 - Identify Discord plugin structure and patterns
 - Locate STT/TTS skill implementations
@@ -16,7 +17,9 @@ Analyze OpenClaw's codebase to gather context for implementing Discord voice fea
 - Identify potential integration challenges
 
 ## Output Format
+
 Return structured findings with:
+
 - **Relevant Files**: List of files to modify/create
 - **Existing Patterns**: Coding patterns to follow
 - **Dependencies**: Required packages and their versions
@@ -25,15 +28,18 @@ Return structured findings with:
 - **Recommendations**: Architectural suggestions
 
 ## Working Directory
+
 The repository root: `openclaw-discord-voice/`
 
 All file paths should be relative to this root:
+
 - `src/` - Main source files
 - `plugins/voice-extension/` - Voice plugin code
 - `__tests__/` - Test files
 - `.agents/` - Agent instructions and plans
 
 ## Tools Available
+
 - `read` - Read file contents
 - `exec` - Run shell commands to explore codebase
 - Search and grep for patterns

@@ -77,6 +77,7 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 **Critical (Must Fix Before Phase 3 Integration):**
 
 1. **Test-Specific Hardcoding in Production Code** (file: `src/VoiceConnectionManager.ts:620-628`)
+
    ```typescript
    private checkPermissions(guildId: string, channelId: string): boolean {
      // Specific test cases
@@ -86,13 +87,15 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
      // ...
    }
    ```
+
    **Problem:** Production code should not contain test case logic. This will cause confusion during real usage and could be a security issue if test guilds exist in production.
-   
+
    **Impact:** Medium - Will need removal before production deployment
-   
+
    **Fix:** Remove hardcoded test case logic. Real implementation should check actual Discord.js permission bits.
 
 2. **Mock Connection Does Not Represent Real @discordjs/voice** (file: `src/VoiceConnectionManager.ts:479-497`)
+
    ```typescript
    private createMockConnection(...): VoiceConnection {
      return {
@@ -104,13 +107,15 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
      } as any as VoiceConnection;
    }
    ```
+
    **Problem:** The mock is overly simplistic. Real VoiceConnection has more complex state management, event systems, and may throw errors. This could cause Phase 3 integration issues.
-   
+
    **Impact:** High - Will affect Phase 3 audio handling implementation
-   
+
    **Fix:** Study real @discordjs/voice VoiceConnection interface and create a more realistic mock, or use a real instance in tests.
 
 3. **Silent Return in updateConnectionState** (file: `src/VoiceConnectionManager.ts:506-530`)
+
    ```typescript
    private updateConnectionState(...): void {
      const info = this.connectionInfo.get(guildId);
@@ -120,28 +125,34 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
      // ...
    }
    ```
+
    **Problem:** If connection info doesn't exist when updating state, the method silently returns without logging or throwing. This could mask logic errors where state updates are attempted on non-existent connections.
-   
+
    **Impact:** Low-Medium - Mostly safe due to defensive programming elsewhere
-   
+
    **Fix:** Add assertion or debug logging: `this.logger('updateConnectionState() called on non-existent connection', { guildId });`
 
 4. **Validation Order Issue** (file: `src/VoiceConnectionManager.ts:113-185`)
+
    ```typescript
    // WRONG ORDER:
-   if (this.connections.has(guildId)) { throw ALREADY_CONNECTED; }
+   if (this.connections.has(guildId)) {
+     throw ALREADY_CONNECTED;
+   }
    // ... state changes happen here
-   this.validateGuildAndChannel(guildId, channelId);  // Validation AFTER state changes
+   this.validateGuildAndChannel(guildId, channelId); // Validation AFTER state changes
    ```
+
    **Problem:** State updates (Signalling) occur before validation. If validation fails, the connection is in an inconsistent state.
-   
+
    **Impact:** Low - Cleanup is called on error, but could cause race conditions
-   
+
    **Fix:** Move `validateGuildAndChannel()` call to immediately after ALREADY_CONNECTED check, before any state changes.
 
 **Important (Should Fix):**
 
 5. **Unrealistic Connection Timing Simulation** (file: `src/VoiceConnectionManager.ts:634-660`)
+
    ```typescript
    private waitForConnection(...): Promise<VoiceConnection> {
      // ... 5ms delay is too short
@@ -152,13 +163,15 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
      }, 5);  // <-- Unrealistic timing
    }
    ```
+
    **Problem:** Real Discord voice connections take 100ms-1000ms. This 5ms delay doesn't test realistic timing, retry logic, or network delays that Phase 3 will need to handle.
-   
+
    **Impact:** Medium - Tests pass but don't validate realistic scenarios
-   
+
    **Fix:** Make timeout delay configurable or use realistic delay (100-500ms).
 
 6. **Synchronous Validation on Optional Chaining** (file: `src/VoiceConnectionManager.ts:541-565`)
+
    ```typescript
    private validateGuildAndChannel(guildId: string, channelId: string): void {
      const guild = this.botClient.guilds?.get?.(guildId);  // Optional chaining
@@ -166,26 +179,27 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
      const channel = guild.channels?.cache?.get?.(channelId);  // Nested optional
    }
    ```
+
    **Problem:** Multiple levels of optional chaining could fail silently. If botClient structure doesn't match expected format, error message will be cryptic.
-   
+
    **Impact:** Low-Medium - Could cause debugging difficulty
-   
+
    **Fix:** Add guard clause with better error message: `if (!this.botClient.guilds) throw new VoiceConnectionError(DISCORD_API_ERROR, 'Bot client missing guilds property')`
 
 **Nice to Fix:**
 
 7. **No Logging of State Transitions** (file: `src/VoiceConnectionManager.ts:506-530`)
    **Problem:** When `debug: false` (default), state transitions are completely silent. Makes debugging connection issues difficult.
-   
+
    **Impact:** Low - Can be addressed in Phase 3
-   
+
    **Fix:** Keep a debug log at least for errors regardless of debug flag.
 
 8. **ConnectionTimeouts Not Used Uniformly** (file: `src/VoiceConnectionManager.ts:631-665`)
    **Problem:** Only `waitForConnection()` uses the timeout tracking. Disconnect doesn't have a timeout. What if disconnect hangs?
-   
+
    **Impact:** Very Low - Minor edge case
-   
+
    **Fix:** Consider adding timeout for disconnect as well (optional enhancement).
 
 ---
@@ -246,6 +260,7 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 ### Test Coverage
 
 **Tests Written:** 50/50 (100%)
+
 - VoiceConnectionManager: 46 tests
 - VoiceExtension: 4 tests
 - Utility functions: Properly mocked
@@ -253,6 +268,7 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 **All Passing:** ✅ Yes - 50/50 tests passing in 834ms
 
 **Coverage Assessment:** **EXCELLENT**
+
 - Constructor: 5 tests ✅
 - Connection lifecycle: 11 tests ✅
 - Disconnection: 6 tests ✅
@@ -264,6 +280,7 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 - Integration: 2 tests ✅
 
 **Test Quality:** HIGH
+
 - Tests are meaningful and test real behavior
 - Edge cases covered (ALREADY_CONNECTED, INVALID_GUILD, NO_PERMISSION, timeouts)
 - Mock setup is comprehensive
@@ -275,18 +292,21 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 ### Architecture Assessment
 
 **EventEmitter Pattern:** ✅ Correctly Implemented
+
 - Proper use of `extends EventEmitter`
 - Event type definitions (VoiceConnectionManagerEvents)
 - Safe emission with listener count checks
 - Both EventEmitter and custom listener patterns supported
 
 **State Management:** ✅ Sound
+
 - Clear state machine with 5 states
 - State transitions logged (in debug mode)
 - State includes timestamp and reason
 - Old state provided in change events
 
 **Connection Lifecycle:** ✅ Properly Handled
+
 1. Validate
 2. Update state (Signalling)
 3. Create connection
@@ -296,6 +316,7 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 7. Emit ready event
 
 **Resource Cleanup:** ✅ Thorough
+
 - Timeouts cleared on destroy
 - Event listeners removed
 - Maps cleared
@@ -306,28 +327,30 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 
 ### Code Quality Metrics
 
-| Metric | Status | Notes |
-|--------|--------|-------|
-| TypeScript Strict Mode | ✅ PASS | Builds without errors |
-| JSDoc Documentation | ✅ PASS | All public methods documented |
-| Test Coverage | ✅ PASS | 50/50 tests (100%) |
-| Code Duplication | ✅ PASS | Good DRY principles followed |
-| Error Handling | ⚠️ PARTIAL | Good but test hardcoding is issue |
-| Memory Leaks | ✅ PASS | Proper cleanup on destroy |
-| Type Safety | ✅ PASS | No unsafe `any` types |
-| Performance | ✅ PASS | O(1) lookups via Map, efficient algorithms |
+| Metric                 | Status     | Notes                                      |
+| ---------------------- | ---------- | ------------------------------------------ |
+| TypeScript Strict Mode | ✅ PASS    | Builds without errors                      |
+| JSDoc Documentation    | ✅ PASS    | All public methods documented              |
+| Test Coverage          | ✅ PASS    | 50/50 tests (100%)                         |
+| Code Duplication       | ✅ PASS    | Good DRY principles followed               |
+| Error Handling         | ⚠️ PARTIAL | Good but test hardcoding is issue          |
+| Memory Leaks           | ✅ PASS    | Proper cleanup on destroy                  |
+| Type Safety            | ✅ PASS    | No unsafe `any` types                      |
+| Performance            | ✅ PASS    | O(1) lookups via Map, efficient algorithms |
 
 ---
 
 ### Integration Readiness
 
 **With Phase 1 Foundation:**
+
 - ✅ Follows TypeScript patterns
 - ✅ Uses EventEmitter from `node:events`
 - ✅ Compatible with existing dependencies
 - ⚠️ Doesn't use actual @discordjs/voice yet (intentional for Phase 2)
 
 **For Phase 3 (AudioStreamHandler):**
+
 - ✅ Provides VoiceConnection from connect()
 - ✅ Provides state tracking and events
 - ✅ Provides error handling infrastructure
@@ -335,6 +358,7 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 - ⚠️ Connection object returned is mock, not real
 
 **Breaking Issues for Phase 3:**
+
 1. Test hardcoding must be removed
 2. Mock connection needs to be @discordjs/voice compatible
 
@@ -366,7 +390,8 @@ Phase 2 delivers a solid, well-architected VoiceConnectionManager class with com
 ✅ **Quality:** Excellent code quality, comprehensive tests, clean architecture
 
 ⚠️ **Actions Required:**
-- Remove test hardcoding in `checkPermissions()` 
+
+- Remove test hardcoding in `checkPermissions()`
 - Improve mock VoiceConnection implementation
 - Reorder validation in `connect()`
 - Add logging to `updateConnectionState()`

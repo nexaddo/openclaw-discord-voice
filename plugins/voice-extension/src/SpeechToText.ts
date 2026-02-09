@@ -4,13 +4,7 @@
  */
 
 import * as crypto from 'crypto';
-import {
-  VADConfig,
-  VADResult,
-  STTConfig,
-  TranscriptionResult,
-  STTStats,
-} from './types';
+import { VADConfig, VADResult, STTConfig, TranscriptionResult, STTStats } from './types';
 
 /**
  * Voice Activity Detector - Detects when user is speaking
@@ -18,13 +12,21 @@ import {
  */
 export class VoiceActivityDetector {
   private sampleRate: number;
+
   private frameSize: number;
+
   private energyThreshold: number;
+
   private silenceThreshold: number;
+
   private voiceThreshold: number;
+
   private isSpeakingState: boolean = false;
+
   private silenceDurationMs: number = 0;
+
   private frameCount: number = 0;
+
   private lastEnergyValues: number[] = [];
 
   constructor(config: VADConfig = {}) {
@@ -155,14 +157,23 @@ export class VoiceActivityDetector {
  */
 export class SpeechToText {
   private apiKey: string;
+
   private modelName: string;
+
   private sampleRate: number;
+
   private language: string;
+
   private enableVAD: boolean;
+
   private timeoutMs: number;
+
   private ready: boolean = false;
+
   private vad: VoiceActivityDetector;
+
   private accumulatedFrames: Buffer[] = [];
+
   private stats: STTStats = {
     transcribed: 0,
     errors: 0,
@@ -171,8 +182,11 @@ export class SpeechToText {
     framesPerSecond: 0,
     memoryMb: 0,
   };
+
   private latencies: number[] = [];
+
   private apiError: string | null = null;
+
   private retryConfig = { maxRetries: 3, retryDelay: 100 };
 
   constructor(config: STTConfig) {
@@ -251,7 +265,7 @@ export class SpeechToText {
    */
   public async convertPCMToWAV(
     pcmBuffer: Buffer,
-    options?: { sampleRate?: number; channels?: number; bitsPerSample?: number }
+    options?: { sampleRate?: number; channels?: number; bitsPerSample?: number },
   ): Promise<Buffer> {
     const sampleRate = options?.sampleRate ?? this.sampleRate;
     const channels = options?.channels ?? 1;
@@ -325,10 +339,7 @@ export class SpeechToText {
   /**
    * Transcribe audio buffer using Whisper API (mocked)
    */
-  public async transcribe(
-    audioBuffer: Buffer,
-    options?: { language?: string }
-  ): Promise<TranscriptionResult> {
+  public async transcribe(audioBuffer: Buffer, options?: { language?: string }): Promise<TranscriptionResult> {
     if (this.apiError) {
       this.stats.errors++;
       throw new Error(`STT API Error: ${this.apiError}`);
@@ -368,8 +379,7 @@ export class SpeechToText {
         // Update statistics
         this.stats.transcribed++;
         this.stats.totalFrames++;
-        this.stats.avgLatencyMs =
-          this.latencies.reduce((a, b) => a + b, 0) / this.latencies.length;
+        this.stats.avgLatencyMs = this.latencies.reduce((a, b) => a + b, 0) / this.latencies.length;
         this.stats.framesPerSecond = 1000 / this.stats.avgLatencyMs;
         this.stats.memoryMb = process.memoryUsage().heapUsed / (1024 * 1024);
         this.stats.lastTranscription = Date.now();
@@ -377,7 +387,7 @@ export class SpeechToText {
         // Mock transcription result
         const result: TranscriptionResult = {
           text: `Mocked transcription of audio (${duration.toFixed(0)}ms)`,
-          language: language,
+          language,
           confidence: 0.85 + Math.random() * 0.15,
           duration: Math.round(duration),
           timestamp: Date.now(),

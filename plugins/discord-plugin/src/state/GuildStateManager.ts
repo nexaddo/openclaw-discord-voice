@@ -3,17 +3,19 @@
  * Manages persistent guild voice state
  */
 
-import { GuildVoiceState, StoredGuildVoiceState, VoiceMode, PipelineStatus, IStateManager } from '../types.js';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { GuildVoiceState, StoredGuildVoiceState, VoiceMode, PipelineStatus, IStateManager } from '../types.js';
 
 /**
  * Manages voice state for Discord guilds
  */
 export class GuildStateManager implements IStateManager {
   private states: Map<string, GuildVoiceState> = new Map();
+
   private stateFile: string;
+
   private saveInterval?: NodeJS.Timeout;
 
   constructor(stateFile?: string) {
@@ -36,7 +38,7 @@ export class GuildStateManager implements IStateManager {
       activeUsers: new Set(),
       lastActivity: Date.now(),
       pipelineStatus: PipelineStatus.Ready,
-      errorCount: 0
+      errorCount: 0,
     };
 
     this.states.set(guildId, state);
@@ -88,7 +90,7 @@ export class GuildStateManager implements IStateManager {
           lastActivity: state.lastActivity,
           pipelineStatus: state.pipelineStatus,
           errorCount: state.errorCount,
-          lastError: state.lastError
+          lastError: state.lastError,
         };
       }
 
@@ -131,7 +133,7 @@ export class GuildStateManager implements IStateManager {
           lastActivity: stored.lastActivity,
           pipelineStatus: stored.pipelineStatus,
           errorCount: stored.errorCount,
-          lastError: stored.lastError
+          lastError: stored.lastError,
         };
 
         this.states.set(guildId, state);
@@ -154,7 +156,7 @@ export class GuildStateManager implements IStateManager {
    */
   startAutoSave(intervalMs: number = 30000): void {
     this.saveInterval = setInterval(() => {
-      this.saveState().catch(err => console.error('Auto-save failed:', err));
+      this.saveState().catch((err) => console.error('Auto-save failed:', err));
     }, intervalMs);
   }
 

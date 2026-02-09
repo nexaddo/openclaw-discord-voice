@@ -136,12 +136,12 @@ Phase 7 (Discord Plugin) ← waits here
 
 ## Current Status (2026-02-06 22:49 EST)
 
-| Phase | Status | PR | Action |
-|-------|--------|----|----|
-| Phase 4 (STT) | Ready for Review | #2 | Waiting for your approval |
-| Phase 5 (TTS) | Ready for Review | #3 | Waiting for your approval |
-| Phase 6 (Command) | Blocked | - | Waiting for 4 & 5 to merge |
-| Phase 7 (Plugin) | Design Complete | #4 | Waiting for 6 to merge |
+| Phase             | Status           | PR  | Action                     |
+| ----------------- | ---------------- | --- | -------------------------- |
+| Phase 4 (STT)     | Ready for Review | #2  | Waiting for your approval  |
+| Phase 5 (TTS)     | Ready for Review | #3  | Waiting for your approval  |
+| Phase 6 (Command) | Blocked          | -   | Waiting for 4 & 5 to merge |
+| Phase 7 (Plugin)  | Design Complete  | #4  | Waiting for 6 to merge     |
 
 ---
 
@@ -150,6 +150,7 @@ Phase 7 (Discord Plugin) ← waits here
 **Choose one:**
 
 ### Option A: Approve & Merge All
+
 ```
 "Approved! Merge Phase 4 & 5 to main"
 
@@ -161,6 +162,7 @@ Conductor will:
 ```
 
 ### Option B: Request Changes
+
 ```
 "Phase 4 PR: Please add error handling for timeout scenario"
 
@@ -172,6 +174,7 @@ Conductor will:
 ```
 
 ### Option C: Review Comments First
+
 ```
 "Show me Phase 4 PR code review comments first"
 
@@ -237,16 +240,19 @@ Phase 8 (CI/CD & Deploy) ← Must wait for 7
 **Conductor executes decisions.**
 
 ### Agent Reports
+
 ```
 "Phase 4 complete: PR #2 ready for review"
 ```
 
 ### Your Decision
+
 ```
 "Approved, merge it"
 ```
 
 ### Conductor Action
+
 ```
 "Merging #2 to main... ✅ Spawning Phase 6"
 ```
@@ -256,17 +262,20 @@ Phase 8 (CI/CD & Deploy) ← Must wait for 7
 ## Emergency Scenarios
 
 ### What if a PR has conflicts?
+
 - Agent will report: "PR #2 has merge conflicts"
 - You decide: Fix conflicts or rebase
 - Conductor executes the fix
 
 ### What if tests fail in PR?
+
 - Agent will report: "Tests failed: X/Y passing"
 - Agent will iterate to fix
 - New commit will be added to PR
 - You review the fix
 
 ### What if code review blocks merge?
+
 - GitHub will show review comments
 - You see the feedback
 - Agent fixes and updates PR
@@ -277,6 +286,7 @@ Phase 8 (CI/CD & Deploy) ← Must wait for 7
 ## Summary
 
 **You control the flow:**
+
 1. Agents report: "PR #X ready"
 2. You say: "Approved" or "Fix this"
 3. I execute: Merge or tell agent to fix

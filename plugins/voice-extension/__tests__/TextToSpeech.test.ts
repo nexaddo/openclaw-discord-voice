@@ -20,13 +20,10 @@ import {
 
 class MockElevenLabsAPI implements IElevenLabsAPI {
   shouldFail = false;
+
   callCount = 0;
 
-  async synthesize(
-    text: string,
-    voiceId: string,
-    config: TTSConfig
-  ): Promise<Buffer> {
+  async synthesize(text: string, voiceId: string, config: TTSConfig): Promise<Buffer> {
     this.callCount++;
     if (this.shouldFail) {
       throw new Error('API Error');
@@ -303,10 +300,7 @@ describe('TextToSpeech (Phase 5) - TTS Pipeline', () => {
     });
 
     it('TC-D03: Cache respects size limit (maxCacheSize)', async () => {
-      const smallTTS = new TextToSpeech(
-        { ...defaultConfig, cacheSize: 2 },
-        mockAPI
-      );
+      const smallTTS = new TextToSpeech({ ...defaultConfig, cacheSize: 2 }, mockAPI);
 
       await smallTTS.synthesize('Text 1');
       await smallTTS.synthesize('Text 2');
@@ -319,10 +313,7 @@ describe('TextToSpeech (Phase 5) - TTS Pipeline', () => {
     });
 
     it('TC-D04: Caching disabled - API called each time', async () => {
-      const noCacheTTS = new TextToSpeech(
-        { ...defaultConfig, enableCaching: false },
-        mockAPI
-      );
+      const noCacheTTS = new TextToSpeech({ ...defaultConfig, enableCaching: false }, mockAPI);
       mockAPI.reset();
 
       const text = 'No cache test';
@@ -550,13 +541,13 @@ describe('TextToSpeech (Phase 5) - TTS Pipeline', () => {
       // Simulate full TTS to Opus pipeline
       const response = await tts.synthesize('Hello Discord');
       const pcmData = await tts.convertWAVtoPCM(response.audio);
-      
+
       // Extract first frame (960 samples × 2 channels = 1920)
       const firstFrame = new Float32Array(1920);
       for (let i = 0; i < Math.min(1920, pcmData.length); i++) {
         firstFrame[i] = pcmData[i];
       }
-      
+
       const opusBuffer = await tts.encodeToOpus(firstFrame);
 
       expect(opusBuffer).toBeInstanceOf(Uint8Array);

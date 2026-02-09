@@ -9,6 +9,7 @@
 ## Executive Summary
 
 Phase 4 implements the **Speech-to-Text Pipeline** with **dual-mode operation**:
+
 - **Primary:** OpenAI Whisper API (cloud-based, high accuracy)
 - **Fallback:** Offline STT library (zero-cost, works without API keys)
 
@@ -44,6 +45,7 @@ Audio Input (PCM, 48kHz, stereo)
 **When to use:** `OPENAI_API_KEY` is set and valid
 
 **Implementation:**
+
 - Audio format: WAV (PCM int16, 48kHz, mono recommended for Whisper)
 - Batch size: 1-2 second chunks (~96 KB max)
 - Language detection: Auto (or user-specified)
@@ -54,6 +56,7 @@ Audio Input (PCM, 48kHz, stereo)
 - Latency: 1-5 seconds depending on audio length
 
 **Configuration:**
+
 ```env
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=whisper-1
@@ -67,6 +70,7 @@ STT_MODE=cloud  # auto-detected if API key present
 **When to use:** `OPENAI_API_KEY` is NOT set
 
 **Why Vosk:**
+
 - ✅ Open-source (MIT license)
 - ✅ Works offline (no internet required)
 - ✅ ~60 MB model size
@@ -75,6 +79,7 @@ STT_MODE=cloud  # auto-detected if API key present
 - ✅ No API calls = zero cost
 
 **Installation:**
+
 ```bash
 npm install vosk
 # Plus language model (one-time download):
@@ -83,6 +88,7 @@ npm install vosk
 ```
 
 **Configuration:**
+
 ```env
 # No OPENAI_API_KEY = auto-fall back to Vosk
 STT_MODE=offline  # auto-detected if API key missing
@@ -96,6 +102,7 @@ VOSK_MODEL_PATH=/path/to/vosk-model-en-us-0.42  # optional override
 | Vosk (offline) | 85-90% | ~50ms | $0 | ✅ |
 
 **User Experience:**
+
 - Whisper: Higher accuracy, slight network delay
 - Vosk: Lower accuracy, instant feedback, no internet needed
 
@@ -111,7 +118,7 @@ export class SpeechToText {
   private openaiClient?: OpenAI;
   private voskRecognizer?: VoskRecognizer;
   private cache: Map<string, string>;  // Hash → transcription
-  
+
   constructor(options?: STTOptions) {
     // Auto-detect mode based on API key presence
     if (process.env.OPENAI_API_KEY) {
@@ -122,7 +129,7 @@ export class SpeechToText {
       this.voskRecognizer = new VoskRecognizer(...);
     }
   }
-  
+
   // Transcribe PCM audio to text
   async transcribeAudio(pcmBuffer: Buffer): Promise<string> {
     if (this.mode === 'cloud') {
@@ -131,41 +138,41 @@ export class SpeechToText {
       return this.transcribeWithVosk(pcmBuffer);
     }
   }
-  
+
   private async transcribeWithWhisper(pcmBuffer: Buffer): Promise<string> {
     // Convert PCM → WAV
     const wavBuffer = pcmToWav(pcmBuffer, 48000, 1);
-    
+
     // Check cache
     const hash = hashBuffer(wavBuffer);
     if (this.cache.has(hash)) {
       return this.cache.get(hash)!;
     }
-    
+
     // Call Whisper API
     const transcription = await this.openaiClient!.audio.transcriptions.create({
       file: wavBuffer,
       model: 'whisper-1',
       language: 'en'
     });
-    
+
     // Cache result (60 min TTL)
     this.cache.set(hash, transcription.text);
     setTimeout(() => this.cache.delete(hash), 60 * 60 * 1000);
-    
+
     return transcription.text;
   }
-  
+
   private transcribeWithVosk(pcmBuffer: Buffer): Promise<string> {
     return new Promise((resolve, reject) => {
       try {
         // Feed audio to Vosk recognizer
         this.voskRecognizer!.acceptWaveform(pcmBuffer);
-        
+
         // Get result
         const result = this.voskRecognizer!.result();
         const parsed = JSON.parse(result);
-        
+
         if (parsed.result && parsed.result.length > 0) {
           resolve(parsed.result.map((r: any) => r.conf).join(' '));
         } else if (parsed.partial) {
@@ -188,6 +195,7 @@ export class SpeechToText {
 ### Test Cases (70 total)
 
 **Section A: Mode Detection (8 tests)**
+
 - ✅ Detect cloud mode when API key present
 - ✅ Detect offline mode when API key missing
 - ✅ Fallback from cloud to offline on API error
@@ -198,6 +206,7 @@ export class SpeechToText {
 - ✅ Cache mode selection across sessions
 
 **Section B: Whisper API (20 tests)**
+
 - ✅ Transcribe short audio (1-2 sec)
 - ✅ Transcribe long audio (30+ sec with batching)
 - ✅ Handle API rate limiting (429)
@@ -220,6 +229,7 @@ export class SpeechToText {
 - ✅ Handle concurrent requests
 
 **Section C: Vosk Offline (20 tests)**
+
 - ✅ Transcribe audio without API key
 - ✅ Return results in <100ms
 - ✅ Handle multiple languages
@@ -242,6 +252,7 @@ export class SpeechToText {
 - ✅ Log all offline processing
 
 **Section D: VoiceActivityDetector (14 tests)**
+
 - ✅ Detect speech onset
 - ✅ Detect speech offset
 - ✅ Ignore background noise
@@ -258,6 +269,7 @@ export class SpeechToText {
 - ✅ Latency: real-time capable
 
 **Section E: Error Handling & Fallback (8 tests)**
+
 - ✅ Graceful fallback from cloud to offline
 - ✅ User-friendly error messages
 - ✅ Log all errors
@@ -293,26 +305,28 @@ STT_LOG_LEVEL=info               # debug | info | warn | error
 
 ### Default Behavior
 
-| Scenario | Behavior |
-|----------|----------|
-| API key present | Use Whisper API |
-| API key missing | Use Vosk offline |
-| API key invalid | Fall back to Vosk |
+| Scenario               | Behavior                         |
+| ---------------------- | -------------------------------- |
+| API key present        | Use Whisper API                  |
+| API key missing        | Use Vosk offline                 |
+| API key invalid        | Fall back to Vosk                |
 | API rate limited (429) | Retry 3x with backoff, then Vosk |
-| API timeout | Fall back to Vosk |
-| Vosk model missing | Download on first use |
-| Both fail | Error with helpful message |
+| API timeout            | Fall back to Vosk                |
+| Vosk model missing     | Download on first use            |
+| Both fail              | Error with helpful message       |
 
 ---
 
 ## Integration Points
 
 ### Phase 3 (AudioStreamHandler)
+
 - Input: PCM audio frames (48kHz, stereo, 3,840 bytes/frame)
 - Output: String transcription
 - Latency: <100ms (Vosk) or 1-5s (Whisper)
 
 ### Phase 6 (Voice Command Pipeline)
+
 - Consumes: Transcription strings
 - Passes to: Intent parser
 
@@ -347,11 +361,13 @@ User provides OPENAI_API_KEY?
 ## Cost Model
 
 ### Whisper API
+
 - $0.002 per minute of audio
 - Batch up to 25 MB per request
 - Example: 10 hours/month = $12/month
 
 ### Vosk (Offline)
+
 - Free (open-source)
 - One-time model download (~60 MB)
 - Zero ongoing costs
@@ -362,17 +378,20 @@ User provides OPENAI_API_KEY?
 ## Success Criteria
 
 ✅ Cloud mode (Whisper API):
+
 - Transcription accuracy >95%
 - Latency 1-5 seconds
 - Graceful fallback on API error
 
 ✅ Offline mode (Vosk):
+
 - Transcription accuracy 85-90%
 - Latency <100ms
 - Works without internet
 - Model auto-downloads on first use
 
 ✅ Fallback mechanism:
+
 - Seamless switching between modes
 - User-friendly error messages
 - All errors logged (without leaking keys)
@@ -400,6 +419,7 @@ User provides OPENAI_API_KEY?
 **Previous Implementation:** ✅ Complete (Whisper API only)
 **Updated Plan:** Add Vosk offline fallback capability
 **Implementation Approach:**
+
 - Keep existing Whisper implementation
 - Add Vosk support with mode detection
 - Add fallback logic (cloud → offline)

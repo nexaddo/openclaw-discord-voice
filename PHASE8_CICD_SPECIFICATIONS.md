@@ -12,6 +12,7 @@ Phase 8 implements comprehensive CI/CD pipelines, automated testing, containeriz
 ## 1. Current State Analysis
 
 ### Repository Structure
+
 ```
 openclaw-discord-voice/
 ├── plugins/
@@ -32,12 +33,14 @@ openclaw-discord-voice/
 ```
 
 ### Build System
+
 - **TypeScript:** 5.9.3 (strict mode: partial)
 - **Test Framework:** Vitest 4.0.18
 - **Build Tool:** Node.js + TypeScript compiler
 - **Module Format:** ESNext/CommonJS
 
 ### Current Test Status
+
 - **Total Tests:** 199+ across 6 test files
 - **Passing:** 173/183 in Vitest
 - **Failing:** 10 tests (timing-related, VoiceCommandPipeline)
@@ -46,6 +49,7 @@ openclaw-discord-voice/
   - voice-extension: 157 tests (all phases)
 
 ### Gaps Identified
+
 - ❌ No CI/CD pipeline (GitHub Actions)
 - ❌ No Docker containerization
 - ❌ No monitoring/observability
@@ -60,31 +64,35 @@ openclaw-discord-voice/
 ## 2. Testing Strategy
 
 ### Test Coverage Summary
-| Phase | Component | Tests | Status |
-|-------|-----------|-------|--------|
-| 3 | AudioStreamHandler | 56 | ✅ Passing |
-| 4 | SpeechToText | 62 | ✅ Passing |
-| 5 | TextToSpeech | 40 | ✅ Passing |
-| 6 | VoiceCommandPipeline | 36 | ⚠️ 26/36 passing |
-| 7 | Discord Plugin | 42 | ✅ Passing |
-| **Total** | | **199+** | **173/183** |
+
+| Phase     | Component            | Tests    | Status           |
+| --------- | -------------------- | -------- | ---------------- |
+| 3         | AudioStreamHandler   | 56       | ✅ Passing       |
+| 4         | SpeechToText         | 62       | ✅ Passing       |
+| 5         | TextToSpeech         | 40       | ✅ Passing       |
+| 6         | VoiceCommandPipeline | 36       | ⚠️ 26/36 passing |
+| 7         | Discord Plugin       | 42       | ✅ Passing       |
+| **Total** |                      | **199+** | **173/183**      |
 
 ### Test Pyramid
+
 - **Unit Tests:** ~120 tests (60%) - Direct function testing
 - **Integration Tests:** ~60 tests (30%) - Component interaction
 - **E2E Tests:** ~19 tests (10%) - Full pipeline flow
 
 ### Coverage Targets
+
 - **Minimum:** 80% code coverage
 - **Target:** 85% code coverage
 - **Critical paths:** 95% coverage required
 
 ### Known Failing Tests (Priority Fix)
+
 1. VoiceCommandPipeline latency check (timeout)
 2. Session cleanup timing (race condition)
 3. Recovery metrics calculation (assertion timing)
 4. Error retry backoff (timing precision)
-5-10. Other timing-related failures in concurrent scenarios
+   5-10. Other timing-related failures in concurrent scenarios
 
 ---
 
@@ -147,6 +155,7 @@ PR Created
 ### GitHub Actions Workflows
 
 #### `ci.yml` - On PR & Push
+
 ```yaml
 name: CI
 on:
@@ -204,6 +213,7 @@ jobs:
 ```
 
 #### `release.yml` - On Manual Trigger
+
 ```yaml
 name: Deploy to Production
 on:
@@ -246,6 +256,7 @@ jobs:
 ### Docker Image Strategy
 
 **Multi-stage Dockerfile:**
+
 ```dockerfile
 # Stage 1: Build
 FROM node:18-alpine AS builder
@@ -273,6 +284,7 @@ CMD ["node", "dist/index.js"]
 ```
 
 **Image Optimization:**
+
 - Base: Alpine (small, secure)
 - Multi-stage: Reduce final image size
 - Non-root user: Security hardening
@@ -280,12 +292,14 @@ CMD ["node", "dist/index.js"]
 - **Target size:** <200MB
 
 ### TypeScript Compilation
+
 - **Targets:** ES2020, CommonJS
 - **Strict Mode:** Enabled in both plugins
 - **Declaration Files:** Generated (.d.ts)
 - **Source Maps:** Included for debugging
 
 ### Build Artifacts
+
 - **discord-plugin/dist:** ~500KB
 - **voice-extension/dist:** ~800KB
 - **Total package:** ~1.3MB (uncompressed)
@@ -297,6 +311,7 @@ CMD ["node", "dist/index.js"]
 ### Environments
 
 #### Development
+
 - **Trigger:** Local development only
 - **Deploy:** `npm run dev` locally
 - **Logging:** Debug level (verbose)
@@ -304,6 +319,7 @@ CMD ["node", "dist/index.js"]
 - **Database:** Local SQLite (if needed)
 
 #### Staging
+
 - **Trigger:** Automatic on merge to `main`
 - **Deploy:** Manual GitHub Action or webhook
 - **Logging:** Info level
@@ -314,6 +330,7 @@ CMD ["node", "dist/index.js"]
 - **Duration:** Permanent (always available)
 
 #### Production
+
 - **Trigger:** Manual workflow dispatch (approval gate)
 - **Deploy:** Blue-green deployment
 - **Logging:** Error/warning level
@@ -355,6 +372,7 @@ Ready for Next Deploy
 ### Rollback Procedures
 
 **Automatic Triggers:**
+
 - Health check failure for 30 seconds
 - Error rate >10% sustained for 1 minute
 - Latency >2000ms sustained for 1 minute
@@ -363,6 +381,7 @@ Ready for Next Deploy
 **Rollback Alert:** Posted to Discord #alerts-critical with details
 
 **Rollback Steps:**
+
 1. Detect failure condition
 2. Switch traffic back to Green (old version)
 3. Alert team (PagerDuty)
@@ -371,6 +390,7 @@ Ready for Next Deploy
 6. Report rollback completion
 
 **Manual Rollback:**
+
 ```bash
 ./scripts/rollback.sh production
 ```
@@ -384,6 +404,7 @@ Ready for Next Deploy
 ### Structured Logging
 
 **Log Format:** JSON
+
 ```json
 {
   "timestamp": "2026-02-08T19:00:00Z",
@@ -404,6 +425,7 @@ Ready for Next Deploy
 ```
 
 **Log Levels:**
+
 - **DEBUG:** Detailed diagnostic info (dev only)
 - **INFO:** General informational messages
 - **WARN:** Warning conditions (recoverable)
@@ -413,6 +435,7 @@ Ready for Next Deploy
 ### Metrics Collection
 
 **Prometheus Metrics:**
+
 ```
 # Discord Events
 discord_voice_connect_total{guild_id="X",status="success"}
@@ -448,20 +471,20 @@ node_process_memory_bytes{type="heapUsed|heapTotal|external"}
 ### Error Tracking (Sentry)
 
 **Configuration:**
+
 ```typescript
-import * as Sentry from "@sentry/node";
+import * as Sentry from '@sentry/node';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  integrations: [
-    new Sentry.Integrations.Http({ tracing: true }),
-  ],
+  integrations: [new Sentry.Integrations.Http({ tracing: true })],
 });
 ```
 
 **Events Tracked:**
+
 - Exceptions and errors
 - Performance issues (slow transactions)
 - Release tracking
@@ -471,6 +494,7 @@ Sentry.init({
 ### Alerting Rules
 
 **Critical Alerts (Discord #alerts-critical):**
+
 - Error rate >5% in 5 minutes
 - Response latency >2000ms (p95) in 5 minutes
 - Health check failure
@@ -478,6 +502,7 @@ Sentry.init({
 - Database connection loss
 
 **Warning Alerts (Discord #alerts-warning):**
+
 - Error rate >1% in 5 minutes
 - Response latency >1000ms (p95) in 5 minutes
 - Memory usage >80%
@@ -491,6 +516,7 @@ Sentry.init({
 ### Environment Variables
 
 **Discord:**
+
 ```
 DISCORD_TOKEN=<bot-token>
 DISCORD_CLIENT_ID=<client-id>
@@ -498,6 +524,7 @@ DISCORD_GUILD_ID=<test-guild-id>
 ```
 
 **Voice Processing:**
+
 ```
 STT_PROVIDER=openai           # or google, azure
 STT_API_KEY=<key>
@@ -506,6 +533,7 @@ TTS_API_KEY=<key>
 ```
 
 **Deployment:**
+
 ```
 NODE_ENV=production|staging|development
 LOG_LEVEL=debug|info|warn|error
@@ -515,6 +543,7 @@ HEALTH_CHECK_INTERVAL=30s
 ```
 
 ### Secrets Management
+
 - Store in GitHub Secrets (dev/staging/prod environments)
 - Rotate quarterly
 - Log access to secrets
@@ -525,7 +554,9 @@ HEALTH_CHECK_INTERVAL=30s
 ## 8. Implementation Timeline
 
 ### Phase 8a: CI/CD Pipeline Setup (1-2 days)
+
 **Deliverables:**
+
 - ✅ ESLint + Prettier configuration
 - ✅ GitHub Actions workflows (ci.yml, release.yml)
 - ✅ Codecov integration
@@ -534,13 +565,16 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ All 199+ tests passing in CI
 
 **Acceptance Criteria:**
+
 - Green CI on all PRs
 - Coverage >85%
 - No ESLint warnings
 - No high-severity vulnerabilities
 
 ### Phase 8b: Build & Deployment (1-2 days)
+
 **Deliverables:**
+
 - ✅ Dockerfile (multi-stage, <200MB)
 - ✅ Deployment scripts (deploy.sh, rollback.sh, smoke-test.sh)
 - ✅ Health check endpoint (`GET /health`)
@@ -549,6 +583,7 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ Docker registry setup (ghcr.io)
 
 **Acceptance Criteria:**
+
 - Docker image builds and runs locally
 - Health check succeeds
 - Metrics endpoint returns valid data
@@ -556,7 +591,9 @@ HEALTH_CHECK_INTERVAL=30s
 - Rollback script executes successfully
 
 ### Phase 8c: Monitoring & Observability (1 day)
+
 **Deliverables:**
+
 - ✅ Structured JSON logging
 - ✅ Sentry error tracking integration
 - ✅ Prometheus metrics endpoints
@@ -565,13 +602,16 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ Slack alert integration
 
 **Acceptance Criteria:**
+
 - Logs appear in structured format
 - Sentry receives test errors
 - Prometheus metrics scraped successfully
 - Alerts trigger on test conditions
 
 ### Phase 8d: Testing & Validation (1-2 days)
+
 **Deliverables:**
+
 - ✅ Load tests (10+ concurrent sessions)
 - ✅ Smoke tests (5 minute validation)
 - ✅ Rollback procedure tested
@@ -580,6 +620,7 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ Runbooks written
 
 **Acceptance Criteria:**
+
 - Load tests show acceptable performance
 - Smoke tests pass 100%
 - Rollback completes in <2 minutes
@@ -620,22 +661,23 @@ HEALTH_CHECK_INTERVAL=30s
 
 ## 10. Risks & Mitigations
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|-----------|-----------|
-| 10 timing tests hard to fix | Delay 1-2 days | High | May need to rewrite test logic, use retries |
-| Docker image >200MB | Slow deployment | Medium | Remove dev dependencies, optimize layers |
-| Performance regression | Deployment issues | Medium | Load test before production, compare metrics |
-| Secrets leak in logs | Security incident | Medium | Redact secrets in logging, audit logs |
-| Staging/prod misconfiguration | Data loss/corruption | Low | Infrastructure-as-Code, dry-run before apply |
-| Monitoring not capturing data | Blind spot in production | Medium | Test monitoring in staging first |
-| Rollback fails | Extended downtime | Low | Test rollback regularly, keep old version running |
-| Discord outage | Can't deploy/communicate | Low | Have manual runbook, communicate via GitHub |
+| Risk                          | Impact                   | Likelihood | Mitigation                                        |
+| ----------------------------- | ------------------------ | ---------- | ------------------------------------------------- |
+| 10 timing tests hard to fix   | Delay 1-2 days           | High       | May need to rewrite test logic, use retries       |
+| Docker image >200MB           | Slow deployment          | Medium     | Remove dev dependencies, optimize layers          |
+| Performance regression        | Deployment issues        | Medium     | Load test before production, compare metrics      |
+| Secrets leak in logs          | Security incident        | Medium     | Redact secrets in logging, audit logs             |
+| Staging/prod misconfiguration | Data loss/corruption     | Low        | Infrastructure-as-Code, dry-run before apply      |
+| Monitoring not capturing data | Blind spot in production | Medium     | Test monitoring in staging first                  |
+| Rollback fails                | Extended downtime        | Low        | Test rollback regularly, keep old version running |
+| Discord outage                | Can't deploy/communicate | Low        | Have manual runbook, communicate via GitHub       |
 
 ---
 
 ## 11. Success Criteria
 
 **Functional Criteria:**
+
 - ✅ CI passes on every PR
 - ✅ All 199+ tests pass in CI
 - ✅ Code coverage >85% maintained
@@ -648,6 +690,7 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ Health checks report accurate status
 
 **Performance Criteria:**
+
 - ✅ CI pipeline completes in <5 minutes
 - ✅ Build step completes in <2 minutes
 - ✅ Tests run in <2 minutes
@@ -656,6 +699,7 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ Rollback completes in <2 minutes
 
 **Quality Criteria:**
+
 - ✅ ESLint passes with 0 warnings
 - ✅ No TypeScript errors or warnings
 - ✅ No critical security vulnerabilities
@@ -663,6 +707,7 @@ HEALTH_CHECK_INTERVAL=30s
 - ✅ Documentation is complete and accurate
 
 **Operational Criteria:**
+
 - ✅ Production deployment tested end-to-end
 - ✅ Failure scenarios tested (network, service)
 - ✅ Team trained on monitoring/alerting

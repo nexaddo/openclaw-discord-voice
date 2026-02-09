@@ -79,9 +79,13 @@ export enum TTSErrorCode {
  */
 export class TTSError extends Error {
   code: TTSErrorCode;
+
   timestamp: number;
+
   context?: Record<string, any>;
+
   recoverable: boolean;
+
   retryCount: number;
 
   constructor(
@@ -91,7 +95,7 @@ export class TTSError extends Error {
       context?: Record<string, any>;
       recoverable?: boolean;
       retryCount?: number;
-    }
+    },
   ) {
     super(message);
     this.name = 'TTSError';
@@ -135,10 +139,15 @@ export interface IElevenLabsAPI {
 
 export class TextToSpeech {
   private config: TTSConfig;
+
   private api: IElevenLabsAPI;
+
   private cache: Map<string, TTSResponse>;
+
   private errorCallbacks: ErrorHandler[] = [];
+
   private lastError: TTSError | null = null;
+
   private stats: TTSStats = {
     totalSynthesized: 0,
     totalErrors: 0,
@@ -148,7 +157,9 @@ export class TextToSpeech {
     avgDuration: 0,
     totalEncoded: 0,
   };
+
   private currentVoiceProfile: TTSVoiceProfile;
+
   private opusEncoder: any = null;
 
   /**
@@ -159,7 +170,7 @@ export class TextToSpeech {
     this.config = config;
     this.api = api || this.createDefaultAPI();
     this.cache = new Map();
-    
+
     this.currentVoiceProfile = {
       voiceId: config.voiceId,
       stability: config.stability ?? 0.5,
@@ -180,10 +191,7 @@ export class TextToSpeech {
     }
 
     if (config.sampleRate !== 48000) {
-      throw new TTSError(
-        TTSErrorCode.INVALID_CONFIG,
-        'Sample rate must be 48000 Hz (Discord standard)'
-      );
+      throw new TTSError(TTSErrorCode.INVALID_CONFIG, 'Sample rate must be 48000 Hz (Discord standard)');
     }
   }
 
@@ -203,10 +211,7 @@ export class TextToSpeech {
   /**
    * Synthesize text to speech
    */
-  async synthesize(
-    text: string,
-    voiceProfile?: TTSVoiceProfile
-  ): Promise<TTSResponse> {
+  async synthesize(text: string, voiceProfile?: TTSVoiceProfile): Promise<TTSResponse> {
     try {
       // Validate input
       if (!text || text.trim().length === 0) {
@@ -219,7 +224,7 @@ export class TextToSpeech {
 
       // Use provided or current voice profile
       const profile = voiceProfile ?? this.currentVoiceProfile;
-      
+
       // Cache key must include all parameters that affect synthesis
       const cacheKey = `${text}:${profile.voiceId}:${profile.stability}:${profile.similarity}:${this.config.modelId}:${this.config.format}`;
 
@@ -245,7 +250,7 @@ export class TextToSpeech {
           lastError = error;
           if (attempt < (this.config.maxRetries ?? 3)) {
             // Wait before retry (exponential backoff)
-            await this.delay(Math.pow(2, attempt) * 100);
+            await this.delay(2**attempt * 100);
           }
         }
       }
@@ -285,11 +290,12 @@ export class TextToSpeech {
 
       return response;
     } catch (error: any) {
-      const ttsError = error instanceof TTSError
-        ? error
-        : new TTSError(TTSErrorCode.API_ERROR, error.message, {
-            recoverable: true,
-          });
+      const ttsError =
+        error instanceof TTSError
+          ? error
+          : new TTSError(TTSErrorCode.API_ERROR, error.message, {
+              recoverable: true,
+            });
 
       this.lastError = ttsError;
       this.stats.totalErrors++;
@@ -302,16 +308,10 @@ export class TextToSpeech {
   /**
    * Call API with timeout
    */
-  private async callAPIWithTimeout(
-    text: string,
-    voiceId: string
-  ): Promise<Buffer> {
+  private async callAPIWithTimeout(text: string, voiceId: string): Promise<Buffer> {
     const timeoutMs = this.config.timeoutMs ?? 5000;
-    
-    return Promise.race([
-      this.api.synthesize(text, voiceId, this.config),
-      this.timeoutPromise(timeoutMs),
-    ]);
+
+    return Promise.race([this.api.synthesize(text, voiceId, this.config), this.timeoutPromise(timeoutMs)]);
   }
 
   /**
@@ -321,7 +321,7 @@ export class TextToSpeech {
     return new Promise((_, reject) =>
       setTimeout(() => {
         reject(new TTSError(TTSErrorCode.TIMEOUT, `Request timeout after ${ms}ms`));
-      }, ms)
+      }, ms),
     );
   }
 
@@ -333,11 +333,11 @@ export class TextToSpeech {
     const dataSize = audioBuffer.length - 44;
     const bytesPerSample = 2; // 16-bit PCM
     const channels = 2;
-    const sampleRate = this.config.sampleRate;
-    
+    const {sampleRate} = this.config;
+
     const samples = dataSize / bytesPerSample / channels;
     const duration = samples / sampleRate;
-    
+
     return Math.max(duration, 0.1); // Minimum 0.1 seconds
   }
 
@@ -366,18 +366,12 @@ export class TextToSpeech {
     try {
       // Validate input
       if (!pcmData || pcmData.length === 0) {
-        throw new TTSError(
-          TTSErrorCode.INVALID_AUDIO_FORMAT,
-          'PCM data is empty'
-        );
+        throw new TTSError(TTSErrorCode.INVALID_AUDIO_FORMAT, 'PCM data is empty');
       }
 
       // Should be 960 samples × 2 channels = 1920 elements
       if (pcmData.length !== 960 * 2) {
-        throw new TTSError(
-          TTSErrorCode.INVALID_AUDIO_FORMAT,
-          `PCM data must be 1920 samples (got ${pcmData.length})`
-        );
+        throw new TTSError(TTSErrorCode.INVALID_AUDIO_FORMAT, `PCM data must be 1920 samples (got ${pcmData.length})`);
       }
 
       // Mock Opus encoding - in real implementation, uses libopus
@@ -387,15 +381,13 @@ export class TextToSpeech {
 
       // Fill with pseudo-random but deterministic data
       for (let i = 0; i < opusBuffer.length; i++) {
-        opusBuffer[i] = (pcmData[i * 2] * 127) & 0xFF;
+        opusBuffer[i] = (pcmData[i * 2] * 127) & 0xff;
       }
 
       this.stats.totalEncoded++;
       return opusBuffer;
     } catch (error: any) {
-      const ttsError = error instanceof TTSError
-        ? error
-        : new TTSError(TTSErrorCode.ENCODING_FAILED, error.message);
+      const ttsError = error instanceof TTSError ? error : new TTSError(TTSErrorCode.ENCODING_FAILED, error.message);
 
       this.lastError = ttsError;
       this.notifyErrors(ttsError);
@@ -411,17 +403,11 @@ export class TextToSpeech {
     try {
       // Validate WAV header
       if (wavBuffer.length < 44) {
-        throw new TTSError(
-          TTSErrorCode.INVALID_AUDIO_FORMAT,
-          'WAV buffer too small'
-        );
+        throw new TTSError(TTSErrorCode.INVALID_AUDIO_FORMAT, 'WAV buffer too small');
       }
 
       if (wavBuffer.toString('utf8', 0, 4) !== 'RIFF') {
-        throw new TTSError(
-          TTSErrorCode.INVALID_AUDIO_FORMAT,
-          'Invalid WAV header'
-        );
+        throw new TTSError(TTSErrorCode.INVALID_AUDIO_FORMAT, 'Invalid WAV header');
       }
 
       // Extract audio data (skip 44-byte header)
@@ -437,9 +423,8 @@ export class TextToSpeech {
 
       return pcmData;
     } catch (error: any) {
-      const ttsError = error instanceof TTSError
-        ? error
-        : new TTSError(TTSErrorCode.INVALID_AUDIO_FORMAT, error.message);
+      const ttsError =
+        error instanceof TTSError ? error : new TTSError(TTSErrorCode.INVALID_AUDIO_FORMAT, error.message);
 
       this.lastError = ttsError;
       this.notifyErrors(ttsError);
@@ -553,7 +538,7 @@ export class TextToSpeech {
    * Helper: Sleep function for delays
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

@@ -22,7 +22,9 @@ export { PipelineAdapter } from './integration/PipelineAdapter.js';
  */
 export class DiscordPlugin {
   private commandHandler: any;
+
   private eventHandler: any;
+
   private stateManager: any;
 
   constructor(stateManager: any, config: any = {}) {

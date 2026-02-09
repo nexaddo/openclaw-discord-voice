@@ -81,11 +81,17 @@ export interface PipelineErrorContext {
  */
 export class PipelineError extends Error {
   public readonly code: PipelineErrorCode;
+
   public readonly context: PipelineErrorContext;
+
   public readonly recoverable: boolean;
+
   public readonly userMessage: string;
+
   public readonly recoverySuggestions: string[];
+
   public readonly retryDelayMs?: number;
+
   public readonly timestamp: number;
 
   constructor(
@@ -94,7 +100,7 @@ export class PipelineError extends Error {
     context: PipelineErrorContext = {},
     recoverable: boolean = true,
     userMessage?: string,
-    recoverySuggestions: string[] = []
+    recoverySuggestions: string[] = [],
   ) {
     super(message);
     this.name = 'PipelineError';
@@ -105,9 +111,8 @@ export class PipelineError extends Error {
     };
     this.recoverable = recoverable;
     this.userMessage = userMessage || this.getDefaultUserMessage(code);
-    this.recoverySuggestions = recoverySuggestions.length > 0
-      ? recoverySuggestions
-      : this.getDefaultRecoverySuggestions(code);
+    this.recoverySuggestions =
+      recoverySuggestions.length > 0 ? recoverySuggestions : this.getDefaultRecoverySuggestions(code);
     this.retryDelayMs = this.calculateRetryDelay(code);
     this.timestamp = this.context.timestamp!;
   }
@@ -122,24 +127,24 @@ export class PipelineError extends Error {
         return "I couldn't hear you clearly. Please try speaking again.";
       case PipelineErrorCode.AUDIO_ENCODING_FAILED:
       case PipelineErrorCode.AUDIO_DECODING_FAILED:
-        return "There was an audio processing issue. Please try again.";
+        return 'There was an audio processing issue. Please try again.';
       case PipelineErrorCode.AUDIO_BUFFER_OVERFLOW:
       case PipelineErrorCode.AUDIO_BUFFER_UNDERRUN:
-        return "Audio buffer issue detected. Please wait a moment and try again.";
+        return 'Audio buffer issue detected. Please wait a moment and try again.';
       case PipelineErrorCode.AUDIO_DEVICE_ERROR:
-        return "Audio device error. Please check your connection.";
+        return 'Audio device error. Please check your connection.';
 
       // STT errors
       case PipelineErrorCode.STT_TRANSCRIPTION_FAILED:
         return "I couldn't understand what you said. Please try speaking more clearly.";
       case PipelineErrorCode.STT_API_ERROR:
-        return "Speech recognition service is temporarily unavailable. Please try again.";
+        return 'Speech recognition service is temporarily unavailable. Please try again.';
       case PipelineErrorCode.STT_INVALID_AUDIO:
         return "The audio format wasn't recognized. Please try speaking again.";
       case PipelineErrorCode.STT_TIMEOUT:
-        return "Speech recognition timed out. Please try speaking again.";
+        return 'Speech recognition timed out. Please try speaking again.';
       case PipelineErrorCode.STT_RATE_LIMITED:
-        return "Too many requests. Please wait a moment and try again.";
+        return 'Too many requests. Please wait a moment and try again.';
       case PipelineErrorCode.STT_NO_SPEECH_DETECTED:
         return "I didn't detect any speech. Please speak louder or closer to your microphone.";
 
@@ -147,42 +152,42 @@ export class PipelineError extends Error {
       case PipelineErrorCode.TTS_SYNTHESIS_FAILED:
         return "I couldn't generate a response. Please try again.";
       case PipelineErrorCode.TTS_API_ERROR:
-        return "Voice synthesis service is temporarily unavailable. Please try again.";
+        return 'Voice synthesis service is temporarily unavailable. Please try again.';
       case PipelineErrorCode.TTS_INVALID_TEXT:
-        return "The response text was invalid. This is a system issue.";
+        return 'The response text was invalid. This is a system issue.';
       case PipelineErrorCode.TTS_TIMEOUT:
-        return "Voice synthesis timed out. Please try again.";
+        return 'Voice synthesis timed out. Please try again.';
       case PipelineErrorCode.TTS_VOICE_NOT_FOUND:
-        return "Voice configuration error. This is a system issue.";
+        return 'Voice configuration error. This is a system issue.';
       case PipelineErrorCode.TTS_RATE_LIMITED:
-        return "Voice synthesis is rate limited. Please wait and try again.";
+        return 'Voice synthesis is rate limited. Please wait and try again.';
 
       // Pipeline errors
       case PipelineErrorCode.PIPELINE_TIMEOUT:
-        return "The request timed out. Please try again.";
+        return 'The request timed out. Please try again.';
       case PipelineErrorCode.PIPELINE_CONCURRENT_LIMIT:
-        return "Too many people are using voice commands right now. Please wait.";
+        return 'Too many people are using voice commands right now. Please wait.';
       case PipelineErrorCode.PIPELINE_INVALID_STATE:
-        return "Voice system is in an invalid state. Please try reconnecting.";
+        return 'Voice system is in an invalid state. Please try reconnecting.';
       case PipelineErrorCode.PIPELINE_CANCELLED:
-        return "The request was cancelled. Please try again.";
+        return 'The request was cancelled. Please try again.';
       case PipelineErrorCode.PIPELINE_CONNECTION_LOST:
-        return "Voice connection was lost. Please reconnect and try again.";
+        return 'Voice connection was lost. Please reconnect and try again.';
       case PipelineErrorCode.PIPELINE_USER_DISCONNECTED:
-        return "You disconnected from voice. Please rejoin and try again.";
+        return 'You disconnected from voice. Please rejoin and try again.';
 
       // Agent errors
       case PipelineErrorCode.AGENT_REQUEST_FAILED:
         return "I couldn't process your request right now. Please try again.";
       case PipelineErrorCode.AGENT_TIMEOUT:
-        return "The AI response timed out. Please try again.";
+        return 'The AI response timed out. Please try again.';
       case PipelineErrorCode.AGENT_INVALID_RESPONSE:
-        return "The AI gave an invalid response. Please try again.";
+        return 'The AI gave an invalid response. Please try again.';
       case PipelineErrorCode.AGENT_RATE_LIMITED:
-        return "AI service is busy. Please wait and try again.";
+        return 'AI service is busy. Please wait and try again.';
 
       default:
-        return "An unexpected error occurred. Please try again.";
+        return 'An unexpected error occurred. Please try again.';
     }
   }
 
@@ -193,43 +198,32 @@ export class PipelineError extends Error {
     switch (code) {
       case PipelineErrorCode.AUDIO_CAPTURE_FAILED:
         return [
-          "Check your microphone is working",
+          'Check your microphone is working',
           "Make sure you're not muted",
-          "Try speaking louder",
-          "Move closer to your microphone"
+          'Try speaking louder',
+          'Move closer to your microphone',
         ];
 
       case PipelineErrorCode.STT_TRANSCRIPTION_FAILED:
       case PipelineErrorCode.STT_NO_SPEECH_DETECTED:
         return [
-          "Speak clearly and at normal volume",
-          "Reduce background noise",
-          "Use a better microphone if possible",
-          "Make sure you're not too far from the mic"
+          'Speak clearly and at normal volume',
+          'Reduce background noise',
+          'Use a better microphone if possible',
+          "Make sure you're not too far from the mic",
         ];
 
       case PipelineErrorCode.PIPELINE_TIMEOUT:
-        return [
-          "Wait a few seconds and try again",
-          "Check your internet connection",
-          "Try a shorter message"
-        ];
+        return ['Wait a few seconds and try again', 'Check your internet connection', 'Try a shorter message'];
 
       case PipelineErrorCode.PIPELINE_CONCURRENT_LIMIT:
-        return [
-          "Wait for others to finish their requests",
-          "Try again in a few moments"
-        ];
+        return ['Wait for others to finish their requests', 'Try again in a few moments'];
 
       case PipelineErrorCode.PIPELINE_CONNECTION_LOST:
-        return [
-          "Rejoin the voice channel",
-          "Check your internet connection",
-          "Try disconnecting and reconnecting"
-        ];
+        return ['Rejoin the voice channel', 'Check your internet connection', 'Try disconnecting and reconnecting'];
 
       default:
-        return ["Try again", "If the problem persists, contact support"];
+        return ['Try again', 'If the problem persists, contact support'];
     }
   }
 
@@ -348,10 +342,7 @@ export class RetryManager {
   /**
    * Execute function with retry logic
    */
-  async executeWithRetry<T>(
-    fn: () => Promise<T>,
-    context: string = 'operation'
-  ): Promise<T> {
+  async executeWithRetry<T>(fn: () => Promise<T>, context: string = 'operation'): Promise<T> {
     let lastError: Error;
 
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
@@ -375,7 +366,7 @@ export class RetryManager {
    * Calculate delay with exponential backoff
    */
   private calculateDelay(attempt: number): number {
-    const delay = this.config.baseDelayMs * Math.pow(this.config.backoffMultiplier, attempt);
+    const delay = this.config.baseDelayMs * this.config.backoffMultiplier**attempt;
     return Math.min(delay, this.config.maxDelayMs);
   }
 
@@ -383,7 +374,7 @@ export class RetryManager {
    * Simple delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -412,6 +403,7 @@ export interface ErrorRecoveryConfig {
  */
 export class ErrorRecoveryHandler {
   private config: ErrorRecoveryConfig;
+
   private attempts: number = 0;
 
   constructor(config: ErrorRecoveryConfig) {
@@ -435,7 +427,7 @@ export class ErrorRecoveryHandler {
           try {
             await retryManager.executeWithRetry(
               this.config.fallbackAction || (() => Promise.resolve()),
-              `Recovery attempt ${this.attempts}`
+              `Recovery attempt ${this.attempts}`,
             );
             return true;
           } catch {

@@ -24,6 +24,7 @@ Real-time voice chat integration for OpenClaw, enabling voice conversations with
 ## Development
 
 This project uses a multi-agent development approach:
+
 - **Planning Agent** (Phi-3 Mini): Research and architecture
 - **Implementation Agent** (Haiku 4.5): TDD-based development
 - **Code Review Agent** (Gemma3): Quality assurance

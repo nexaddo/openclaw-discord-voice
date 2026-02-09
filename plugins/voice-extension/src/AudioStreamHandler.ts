@@ -19,14 +19,23 @@ export type ErrorHandler = (error: AudioStreamError) => void;
  */
 export class CircularAudioBuffer {
   private buffer: AudioFrame[];
+
   private capacity: number;
+
   private frameSize: number;
+
   private writeHead: number = 0;
+
   private readHead: number = 0;
+
   private occupancy: number = 0;
+
   private totalWritten: number = 0;
+
   private totalRead: number = 0;
+
   private overflowCount: number = 0;
+
   private underrunCount: number = 0;
 
   constructor(capacity: number, frameSize: number) {
@@ -122,16 +131,16 @@ export class CircularAudioBuffer {
  */
 export class JitterBuffer {
   private frames: JitterBufferFrame[] = [];
+
   private maxFrames: number;
+
   private targetLatency: number;
+
   private sampleRate: number;
+
   private lastPlayoutTime: number = 0;
 
-  constructor(
-    maxFrames: number,
-    targetLatency: number,
-    sampleRate: number
-  ) {
+  constructor(maxFrames: number, targetLatency: number, sampleRate: number) {
     this.maxFrames = maxFrames;
     this.targetLatency = targetLatency;
     this.sampleRate = sampleRate;
@@ -139,8 +148,7 @@ export class JitterBuffer {
 
   enqueue(frame: AudioFrame): void {
     const arrivalTime = Date.now();
-    const playoutTime =
-      arrivalTime + this.targetLatency;
+    const playoutTime = arrivalTime + this.targetLatency;
 
     const jbFrame: JitterBufferFrame = {
       frame,
@@ -200,8 +208,7 @@ export class JitterBuffer {
       for (let i = 1; i < times.length; i++) {
         diffs.push(Math.abs(times[i] - times[i - 1]));
       }
-      jitter =
-        diffs.reduce((a, b) => a + b, 0) / diffs.length;
+      jitter = diffs.reduce((a, b) => a + b, 0) / diffs.length;
     }
 
     let recommendation = 'optimal';
@@ -262,12 +269,19 @@ export class JitterBuffer {
  */
 export class AudioStreamHandler {
   private config: AudioStreamConfig;
+
   private initialized: boolean = false;
+
   private capturing: boolean = false;
+
   private playing: boolean = false;
+
   private jitterBuffer: JitterBuffer;
+
   private circularBuffer: CircularAudioBuffer;
+
   private errorCallbacks: ErrorHandler[] = [];
+
   private lastError: AudioStreamError | null = null;
 
   // Statistics tracking
@@ -287,8 +301,11 @@ export class AudioStreamHandler {
   };
 
   private sequenceNumber: number = Math.floor(Math.random() * 65536);
+
   private timestamp: number = Math.floor(Math.random() * 0x100000000);
+
   private playbackQueue: AudioFrame[] = [];
+
   private startTime: number = 0;
 
   constructor(config: AudioStreamConfig) {
@@ -298,15 +315,8 @@ export class AudioStreamHandler {
     }
 
     this.config = config;
-    this.jitterBuffer = new JitterBuffer(
-      config.jitterBufferSize,
-      config.targetBufferLatency,
-      config.sampleRate
-    );
-    this.circularBuffer = new CircularAudioBuffer(
-      config.circularBufferCapacity,
-      config.frameSize
-    );
+    this.jitterBuffer = new JitterBuffer(config.jitterBufferSize, config.targetBufferLatency, config.sampleRate);
+    this.circularBuffer = new CircularAudioBuffer(config.circularBufferCapacity, config.frameSize);
     this.startTime = Date.now();
   }
 
@@ -315,11 +325,7 @@ export class AudioStreamHandler {
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      throw this.createError(
-        AudioErrorCode.ALREADY_INITIALIZED,
-        'Handler already initialized',
-        false
-      );
+      throw this.createError(AudioErrorCode.ALREADY_INITIALIZED, 'Handler already initialized', false);
     }
 
     try {
@@ -327,11 +333,7 @@ export class AudioStreamHandler {
       // In a real implementation, this would initialize Opus codec
       this.initialized = true;
     } catch (err) {
-      throw this.createError(
-        AudioErrorCode.ENCODER_UNAVAILABLE,
-        'Failed to initialize encoder/decoder',
-        true
-      );
+      throw this.createError(AudioErrorCode.ENCODER_UNAVAILABLE, 'Failed to initialize encoder/decoder', true);
     }
   }
 
@@ -369,7 +371,7 @@ export class AudioStreamHandler {
       throw this.createError(
         AudioErrorCode.INVALID_FRAME_SIZE,
         `Invalid frame size: expected ${expectedSize}, got ${buffer.length}`,
-        false
+        false,
       );
     }
 
@@ -417,7 +419,7 @@ export class AudioStreamHandler {
       throw this.createError(
         AudioErrorCode.INVALID_FRAME_SIZE,
         `Invalid PCM frame size: expected ${expectedSize}, got ${pcmData.length}`,
-        false
+        false,
       );
     }
 
@@ -428,11 +430,7 @@ export class AudioStreamHandler {
       this.stats.framesEncoded++;
       return encoded;
     } catch (err) {
-      throw this.createError(
-        AudioErrorCode.OPUS_ENCODE_FAILED,
-        `Failed to encode frame: ${err}`,
-        true
-      );
+      throw this.createError(AudioErrorCode.OPUS_ENCODE_FAILED, `Failed to encode frame: ${err}`, true);
     }
   }
 
@@ -589,10 +587,7 @@ export class AudioStreamHandler {
   getLatency(): number {
     const health = this.jitterBuffer.getHealth();
     // Estimate latency based on buffer occupancy and jitter
-    return (
-      this.config.targetBufferLatency +
-      health.jitter
-    );
+    return this.config.targetBufferLatency + health.jitter;
   }
 
   /**
@@ -638,7 +633,7 @@ export class AudioStreamHandler {
     }
 
     // First byte is magic
-    encoded[0] = 0xFF;
+    encoded[0] = 0xff;
 
     // Remaining bytes contain simple encoded data
     for (let i = 1; i < encoded.length; i++) {
@@ -683,7 +678,7 @@ export class AudioStreamHandler {
       throw this.createError(
         AudioErrorCode.NOT_INITIALIZED,
         'Handler not initialized. Call initialize() first.',
-        false
+        false,
       );
     }
   }
@@ -691,11 +686,7 @@ export class AudioStreamHandler {
   /**
    * Private helper: Create and emit error
    */
-  private createError(
-    code: AudioErrorCode,
-    message: string,
-    recoverable: boolean
-  ): Error {
+  private createError(code: AudioErrorCode, message: string, recoverable: boolean): Error {
     const error: AudioStreamError = {
       code,
       message,

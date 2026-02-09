@@ -16,6 +16,7 @@ Implementation agents MUST follow this before reporting completion.
 - [ ] Branch pushed to origin (visible on GitHub)
 
 **Example:**
+
 ```bash
 npm run test           # Verify all tests pass
 npm run type-check     # Verify TypeScript
@@ -39,6 +40,7 @@ git push origin BRANCH # Push to GitHub
   - Files created/modified
 
 **Command:**
+
 ```bash
 gh pr create \
   --base main \
@@ -58,6 +60,7 @@ gh pr create \
 - [ ] Include comments in final report
 
 **Command:**
+
 ```bash
 # Check for existing reviews
 gh pr view PR_NUMBER
@@ -73,50 +76,59 @@ gh pr review --json comments --jq '.[] | .comments[] | .body' PR_NUMBER
 Report must include:
 
 ### Header
+
 - [ ] Phase name and number
 - [ ] Status: "✅ Ready for Review" or "🚫 Blocked"
 - [ ] Delivery date/time
 
 ### Implementation Summary
+
 - [ ] Tests: X/Y passing
 - [ ] Files created (list)
 - [ ] Files modified (list)
 - [ ] Key functions implemented
 
 ### PR Information
+
 - [ ] PR URL: `https://github.com/nexaddo/openclaw-discord-voice/pull/[NUMBER]`
 - [ ] Branch: `phase-N-BRANCH`
 - [ ] Base: `main`
 - [ ] Commits (hash list with messages)
 
 ### Code Review Status
+
 - [ ] Any existing PR review comments
 - [ ] Current review status from GitHub
 
 ### Integration Notes
+
 - [ ] Compatible with previous phases
 - [ ] Ready for next phase (if dependent)
 - [ ] All types exported
 - [ ] Documentation updated
 
 ### Next Steps
+
 - [ ] What conductor should do (review, approve, merge)
 - [ ] What happens after merge (which phases unblock)
 - [ ] Any blockers or warnings
 
 **Example:**
+
 ```markdown
 ## Phase 4: Speech-to-Text (STT) Pipeline - COMPLETE
 
 ### Status: ✅ Ready for Review
 
 ### Implementation Summary
+
 - **Tests:** 62/62 passing
 - **Created:** SpeechToText.ts, VoiceActivityDetector.ts
 - **Modified:** index.ts, types.ts
 - **Key Functions:** transcribeAudio(), detectVoiceActivity(), ...
 
 ### PR Information
+
 - **PR:** https://github.com/nexaddo/openclaw-discord-voice/pull/2
 - **Branch:** phase4-stt-implementation
 - **Commits:**
@@ -124,15 +136,18 @@ Report must include:
   - `9ca8e6f` - Phase 4: Update exports
 
 ### Code Review Status
+
 - No review comments yet (PR just created)
 
 ### Integration Notes
+
 - ✅ Fully compatible with Phase 3 (AudioStreamHandler)
 - ✅ Ready for Phase 6 integration
 - ✅ All types exported in index.ts
 - ✅ Documentation complete
 
 ### Next Steps
+
 1. Conductor: Review PR code
 2. You (user): Approve or request changes
 3. Conductor: Merge if approved
@@ -157,6 +172,7 @@ Report must include:
 ## Common Mistakes to Avoid
 
 ❌ **Don't:**
+
 - Leave PR unmerged while continuing other phases
 - Forget to push branch to origin
 - Skip code review step
@@ -164,6 +180,7 @@ Report must include:
 - Merge to main without explicit user approval
 
 ✅ **Do:**
+
 - Create PR immediately after tests pass
 - Retrieve code review comments
 - Report PR link in completion message
@@ -175,6 +192,7 @@ Report must include:
 ## Help
 
 If unsure about any step:
+
 1. Check `voice-implementation-agent.md` for detailed instructions
 2. Check `CONDUCTOR_INSTRUCTIONS.md` for workflow context
 3. Ask conductor (Rue) for clarification

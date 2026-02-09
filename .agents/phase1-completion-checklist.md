@@ -2,7 +2,7 @@
 
 **Status:** Research Complete - Ready for Implementation  
 **Date:** 2026-02-06  
-**Assigned to:** Implementation Agent  
+**Assigned to:** Implementation Agent
 
 ---
 
@@ -20,6 +20,7 @@
 ## Installation Phase
 
 ### Step 1: Backup Current State
+
 ```bash
 # Backup OpenClaw before modifications
 cp /usr/local/lib/node_modules/openclaw/package.json \
@@ -34,11 +35,13 @@ cp /usr/local/lib/node_modules/openclaw/package.json \
 **File:** `/usr/local/lib/node_modules/openclaw/package.json`
 
 Add to `dependencies` section (find it, don't create new):
+
 ```json
 "@discordjs/opus": "^0.10.0"
 ```
 
 Add or create `optionalDependencies` section:
+
 ```json
 "optionalDependencies": {
   "sodium-native": "^5.0.10",
@@ -317,6 +320,7 @@ node test-opus-encode.mjs
 ```
 
 Expected output:
+
 ```
 ✅ Encoded 5760 bytes PCM → [size] bytes Opus
 ```
@@ -334,6 +338,7 @@ Expected output:
 **File:** `README.md`
 
 Add Phase 1 status:
+
 ```markdown
 ## Phase 1: Dependencies & Foundation ✅ COMPLETE
 
@@ -353,6 +358,7 @@ Add Phase 1 status:
 **Create:** `INSTALLATION.md`
 
 Include:
+
 1. System requirements (Node.js 22+)
 2. Install instructions
 3. Verification steps
@@ -370,6 +376,7 @@ Mark Phase 1 as complete:
 ## Implementation Phases
 
 ### Phase 1: Dependencies & Foundation ✅ COMPLETE
+
 **Completed:** 2026-02-06  
 **Dependencies:** @discordjs/opus ^0.10.0 installed  
 **Status:** Ready for Phase 2
@@ -434,6 +441,7 @@ npm list --depth=0 | grep -E "opus|voice|prism|discord"
 ```
 
 Expected to see:
+
 - `@discordjs/opus@0.10.0`
 - `@discordjs/voice@0.19.0`
 - `prism-media@1.3.5`
@@ -516,6 +524,7 @@ Dependencies: DEPENDENCIES.md"
 
 **Problem:** `@discordjs/opus` won't compile  
 **Solution:**
+
 1. Install build tools (see DEPENDENCIES.md troubleshooting)
 2. Retry npm install
 3. If still fails, use opusscript as temporary workaround
@@ -527,6 +536,7 @@ Dependencies: DEPENDENCIES.md"
 
 **Problem:** Version conflicts with existing packages  
 **Solution:**
+
 1. Run `npm list` to see conflicts
 2. Check PHASE1_RESEARCH_REPORT.md compatibility matrix
 3. Adjust version ranges if needed
@@ -538,6 +548,7 @@ Dependencies: DEPENDENCIES.md"
 
 **Problem:** Smoke tests fail  
 **Solution:**
+
 1. Check error message
 2. Consult DEPENDENCIES.md troubleshooting section
 3. Verify file paths and permissions

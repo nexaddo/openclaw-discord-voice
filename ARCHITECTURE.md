@@ -193,6 +193,7 @@ OpenClaw Plugin                    OpenAI Whisper API
 ```
 
 **Configuration:**
+
 ```
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=whisper-1
@@ -228,6 +229,7 @@ OpenClaw Plugin                 ElevenLabs TTS API
 ```
 
 **Configuration:**
+
 ```
 ELEVENLABS_API_KEY=sk_...
 ELEVENLABS_VOICE_ID=nova
@@ -247,7 +249,7 @@ User types: /voice ask "what time is it?"
               │
               ├─ If text channel: respond with text
               │
-              └─ If voice channel: 
+              └─ If voice channel:
                   ├─ Route to voice pipeline (STT)
                   ├─ Process command
                   ├─ Generate response
@@ -355,15 +357,15 @@ Total E2E latency: ~3-8 seconds (dominant: STT + TTS network calls)
 
 ## Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **Opus 960-sample frames (20ms)** | Discord standard, low latency |
-| **Jitter buffer + Circular buffer** | Handle network variance, smooth playback |
-| **Per-user decoder map** | Support concurrent users without conflict |
-| **Fail-open for TTS** | Fallback to text if speech unavailable |
-| **Streaming STT** | Not implemented (future Phase 4b) |
-| **Sequential request/response** | Simpler than concurrent; matches Discord turn-taking |
-| **User API keys in config** | Each user brings their own cloud API keys |
+| Decision                            | Rationale                                            |
+| ----------------------------------- | ---------------------------------------------------- |
+| **Opus 960-sample frames (20ms)**   | Discord standard, low latency                        |
+| **Jitter buffer + Circular buffer** | Handle network variance, smooth playback             |
+| **Per-user decoder map**            | Support concurrent users without conflict            |
+| **Fail-open for TTS**               | Fallback to text if speech unavailable               |
+| **Streaming STT**                   | Not implemented (future Phase 4b)                    |
+| **Sequential request/response**     | Simpler than concurrent; matches Discord turn-taking |
+| **User API keys in config**         | Each user brings their own cloud API keys            |
 
 ---
 
@@ -383,6 +385,7 @@ GitHub Repo (openclaw-discord-voice)
 ```
 
 **User Setup:**
+
 ```
 1. Install npm package / download plugin
 2. Configure .env with API keys:
@@ -444,15 +447,15 @@ Mitigation:
 
 ## Performance Targets
 
-| Component | Target | Notes |
-|-----------|--------|-------|
-| **Audio latency (capture → playback)** | <100ms | End-to-end |
-| **Whisper API response** | 1-5 sec | Depends on audio length |
-| **TTS API response** | 1-2 sec | Text length dependent |
-| **Command processing** | <1 sec | Agent logic |
-| **Total E2E** | 3-8 sec | User perspective |
-| **CPU per concurrent user** | <5% | Single threaded |
-| **Memory per connection** | ~10 MB | Buffers + codecs |
+| Component                              | Target  | Notes                   |
+| -------------------------------------- | ------- | ----------------------- |
+| **Audio latency (capture → playback)** | <100ms  | End-to-end              |
+| **Whisper API response**               | 1-5 sec | Depends on audio length |
+| **TTS API response**                   | 1-2 sec | Text length dependent   |
+| **Command processing**                 | <1 sec  | Agent logic             |
+| **Total E2E**                          | 3-8 sec | User perspective        |
+| **CPU per concurrent user**            | <5%     | Single threaded         |
+| **Memory per connection**              | ~10 MB  | Buffers + codecs        |
 
 ---
 
@@ -500,10 +503,12 @@ Plugin Usage: Each Installation
 #### What Permissions Does It Need?
 
 The bot requires these **OAuth2 scopes**:
+
 - `bot` (enable bot)
 - `applications.commands` (slash commands)
 
 And these **permissions**:
+
 - **Text Permissions:**
   - Send Messages
   - Read Messages/View Channels
@@ -513,6 +518,7 @@ And these **permissions**:
   - Use Voice Activity
 
 **To add bot to your server:**
+
 1. Copy **Client ID** from Application settings
 2. Go to: `https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot%20applications.commands&permissions=3145728`
 3. Select your Discord server
@@ -525,6 +531,7 @@ DISCORD_BOT_TOKEN=YOUR_TOKEN_HERE
 ```
 
 **Example (not real):**
+
 ```
 DISCORD_BOT_TOKEN=MTk4NjIyNDgzNTkxNDc1NjY4.Clwa7A.You28nreJgQIHHhJly26l-8hGc
 ```
@@ -549,11 +556,13 @@ DISCORD_BOT_TOKEN=MTk4NjIyNDgzNTkxNDc1NjY4.Clwa7A.You28nreJgQIHHhJly26l-8hGc
 #### Cost Model
 
 **Whisper API pricing:**
+
 - `$0.002` per minute of audio (1-min = $0.002)
 - **Example:** 10 hours of transcription = $1.20/month
 - No minimum. Pay only for what you use.
 
 **How to monitor usage:**
+
 1. Go to [OpenAI Billing Dashboard](https://platform.openai.com/account/billing/overview)
 2. Check "Usage" → "Whisper API"
 3. Set usage limits if concerned (Settings → Billing → Usage limits)
@@ -565,6 +574,7 @@ OPENAI_API_KEY=sk-YOUR_KEY_HERE
 ```
 
 **Example (not real):**
+
 ```
 OPENAI_API_KEY=sk-proj-abcdef123456789xyz
 ```
@@ -587,15 +597,18 @@ OPENAI_API_KEY=sk-proj-abcdef123456789xyz
 #### Cost Model
 
 **ElevenLabs pricing:**
+
 - Free tier: 10,000 characters/month (~5 min of speech)
 - Paid: $5/month for 100,000 chars, $99/month for 2M chars
 - Cost per character: ~$0.000003 per character
 
 **Example costs:**
+
 - "Hello world" (11 chars) = ~$0.000033 per request
 - 100 commands/day = ~$0.10/month
 
 **Track usage:**
+
 1. Go to [ElevenLabs Billing](https://elevenlabs.io/subscription)
 2. Check character usage
 3. Upgrade tier if needed
@@ -607,6 +620,7 @@ ELEVENLABS_API_KEY=YOUR_KEY_HERE
 ```
 
 **Example (not real):**
+
 ```
 ELEVENLABS_API_KEY=5a123bcdefg456hijklmnop789qrst
 ```
@@ -619,6 +633,7 @@ ELEVENLABS_API_KEY=5a123bcdefg456hijklmnop789qrst
 **Available voices:** nova (default), alloy, echo, fable, onyx, shimmer
 
 **Configuration:**
+
 ```
 # In .env (optional, default=nova):
 ELEVENLABS_VOICE_ID=nova
@@ -689,6 +704,7 @@ npm run validate-config
 ```
 
 If validation fails:
+
 - Check for typos in `.env`
 - Verify keys are not expired/revoked
 - Ensure `.env` is in correct location
@@ -708,14 +724,14 @@ OPENCLAW_PLUGINS=discord,voice-extension openclaw gateway start
 
 ### What Happens If Keys Are Missing?
 
-| Scenario | Behavior |
-|----------|----------|
-| **Missing DISCORD_BOT_TOKEN** | Plugin fails to load. No voice functionality. Error logged. |
-| **Missing OPENAI_API_KEY** | STT unavailable. User hears: "I can't hear you right now." |
-| **Missing ELEVENLABS_API_KEY** | TTS unavailable. Responses sent as Discord text instead. |
-| **Invalid key (typo)** | API calls fail with `401 Unauthorized`. Error logged. Retry after 30s. |
-| **Expired key** | API calls fail. User sees: "API error, try again later." |
-| **Rate limited** | OpenAI: Wait 60s. ElevenLabs: Wait 5min. Shown to user. |
+| Scenario                       | Behavior                                                               |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| **Missing DISCORD_BOT_TOKEN**  | Plugin fails to load. No voice functionality. Error logged.            |
+| **Missing OPENAI_API_KEY**     | STT unavailable. User hears: "I can't hear you right now."             |
+| **Missing ELEVENLABS_API_KEY** | TTS unavailable. Responses sent as Discord text instead.               |
+| **Invalid key (typo)**         | API calls fail with `401 Unauthorized`. Error logged. Retry after 30s. |
+| **Expired key**                | API calls fail. User sees: "API error, try again later."               |
+| **Rate limited**               | OpenAI: Wait 60s. ElevenLabs: Wait 5min. Shown to user.                |
 
 ---
 
@@ -872,6 +888,7 @@ npm run test:e2e
 #### "DISCORD_BOT_TOKEN is missing"
 
 **Solution:**
+
 1. Verify `.env` file exists in project root
 2. Check file is named exactly `.env` (not `.env.txt` or `.env.example`)
 3. Check line has no spaces: `DISCORD_BOT_TOKEN=YOUR_TOKEN`
@@ -881,12 +898,14 @@ npm run test:e2e
 #### "OpenAI API returned 401 Unauthorized"
 
 **Causes:**
+
 - Wrong API key
 - Key expired
 - Key not for this organization
 - API key deleted from platform
 
 **Solution:**
+
 1. Go to [OpenAI API Keys](https://platform.openai.com/account/api-keys)
 2. Create a **new** key
 3. Copy **immediately** (can't see again)
@@ -898,6 +917,7 @@ npm run test:e2e
 **Cause:** Used all free tier (10K chars) or paid quota
 
 **Solution:**
+
 1. Check usage: [ElevenLabs Billing](https://elevenlabs.io/subscription)
 2. Upgrade plan: $5/month = 100K chars
 3. Or wait for next billing cycle
@@ -906,6 +926,7 @@ npm run test:e2e
 #### "Voice not connecting to Discord"
 
 **Check:**
+
 1. Bot token is valid: `npm run validate-config`
 2. Bot has joined server: [Discord Developer Portal](https://discord.com/developers/applications) → OAuth2 → Check permissions
 3. Bot has permissions in voice channel: Right-click channel → Edit → Permissions → Bot role
@@ -935,6 +956,7 @@ CMD ["npm", "start"]
 ```
 
 **Run:**
+
 ```bash
 docker run -d \
   --name openclaw-voice \
@@ -944,6 +966,7 @@ docker run -d \
 ```
 
 **⚠️ SECURITY:**
+
 - Mount `.env` as read-only (`:ro`)
 - Never bake `.env` into Docker image
 - Use Docker secrets instead (advanced):
@@ -977,6 +1000,7 @@ WantedBy=multi-user.target
 ```
 
 **Enable and start:**
+
 ```bash
 systemctl enable openclaw-voice
 systemctl start openclaw-voice
@@ -990,6 +1014,7 @@ systemctl status openclaw-voice
 #### Monitor Spending
 
 **Daily check:**
+
 ```bash
 # View logs for API call counts:
 grep -c "whisper-1" logs/openclaw.log   # Whisper calls
@@ -997,20 +1022,22 @@ grep -c "text-to-speech" logs/openclaw.log  # TTS calls
 ```
 
 **Weekly review:**
+
 - OpenAI: [Usage Dashboard](https://platform.openai.com/account/billing/overview)
 - ElevenLabs: [Billing Page](https://elevenlabs.io/subscription)
 
 #### Cost Optimization
 
-| Strategy | Savings |
-|----------|---------|
-| **Cache frequent commands** | 30-50% fewer STT calls |
-| **Batch responses** | 20-40% fewer TTS calls |
-| **Use text fallback** | 80% (when TTS unavailable) |
-| **Voice activity detection** | 40-60% (skip silence) |
-| **ElevenLabs free tier** | $0 for 10K chars/month |
+| Strategy                     | Savings                    |
+| ---------------------------- | -------------------------- |
+| **Cache frequent commands**  | 30-50% fewer STT calls     |
+| **Batch responses**          | 20-40% fewer TTS calls     |
+| **Use text fallback**        | 80% (when TTS unavailable) |
+| **Voice activity detection** | 40-60% (skip silence)      |
+| **ElevenLabs free tier**     | $0 for 10K chars/month     |
 
 **Estimated monthly costs (medium use):**
+
 - OpenAI Whisper: $5-10 (10-20 hours)
 - ElevenLabs TTS: $5-15 (if beyond free tier)
 - Discord: $0 (free)
@@ -1054,24 +1081,27 @@ grep -c "text-to-speech" logs/openclaw.log  # TTS calls
 ### Security Hardening
 
 1. **Never log API keys**
+
    ```javascript
    // ❌ WRONG
    console.log(`API key: ${apiKey}`);
-   
+
    // ✅ RIGHT
    console.log(`API key: ${apiKey.slice(0, 5)}...`);
    ```
 
 2. **Use .env, not hardcoded**
+
    ```javascript
    // ❌ WRONG
-   const apiKey = "sk-proj-abc123";
-   
+   const apiKey = 'sk-proj-abc123';
+
    // ✅ RIGHT
    const apiKey = process.env.OPENAI_API_KEY;
    ```
 
 3. **Encrypt .env in transit**
+
    ```bash
    # If syncing to server:
    scp -C .env user@server:~/app/

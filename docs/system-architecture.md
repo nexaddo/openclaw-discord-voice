@@ -120,7 +120,7 @@ graph LR
         C2["Jitter Buffer<br/>(200ms)<br/>RTP reordering"]
         C3["Opus Decoder<br/>960-sample frames<br/>20ms duration"]
         C4["Circular Buffer<br/>PCM audio frames<br/>3,840 bytes/frame"]
-        
+
         C1 --> C2
         C2 --> C3
         C3 --> C4
@@ -130,7 +130,7 @@ graph LR
         S1["Audio Buffering<br/>1-2 second chunks<br/>~96 KB per chunk"]
         S2["Whisper API<br/>POST /audio/transcriptions<br/>Latency: 1-5 sec"]
         S3["Transcription<br/>Text output"]
-        
+
         C4 --> S1
         S1 --> S2
         S2 --> S3
@@ -140,7 +140,7 @@ graph LR
         Cmd1["Intent Parser<br/>Extract command"]
         Cmd2["Route to Agent<br/>(Rue)"]
         Cmd3["Agent Response<br/>Text output"]
-        
+
         S3 --> Cmd1
         Cmd1 --> Cmd2
         Cmd2 --> Cmd3
@@ -150,7 +150,7 @@ graph LR
         T1["Text Formatting<br/>Chunk long responses"]
         T2["ElevenLabs API<br/>POST /text-to-speech<br/>Latency: 1-2 sec"]
         T3["Audio Streaming<br/>PCM 48kHz, stereo"]
-        
+
         Cmd3 --> T1
         T1 --> T2
         T2 --> T3
@@ -161,7 +161,7 @@ graph LR
         P2["Opus Encoder<br/>PCM → Opus<br/>20-60 byte frames"]
         P3["RTP Assembly<br/>Sequence, timestamp"]
         P4["Discord.js Send<br/>Encrypted transmission<br/>Back to voice channel"]
-        
+
         T3 --> P1
         P1 --> P2
         P2 --> P3
@@ -180,31 +180,31 @@ graph LR
 ```mermaid
 timeline
     title End-to-End Voice Response Timeline
-    
+
     0ms : User starts speaking
     : Audio buffering begins
-    
+
     500ms : 0.5s of audio buffered
     1000ms : 1.0s of audio buffered
     : Send to Whisper API
-    
+
     1500ms : Whisper processing...
     2000ms : Whisper processing...
-    
+
     2500ms : Whisper returns: "hello world"
     : Route to agent
     2600ms : Agent processes
     2700ms : Agent response: "Hi there!"
     : Send to TTS
-    
+
     2800ms : ElevenLabs processing...
     3000ms : ElevenLabs processing...
-    
+
     3500ms : TTS returns audio (0.8s)
     : Buffer for playback
     3600ms : Audio queued
     3700ms : Playback begins
-    
+
     4500ms : User hears response
     : Total latency: ~3-4 seconds
 ```
@@ -215,7 +215,7 @@ timeline
 graph TB
     subgraph Interactions
         direction LR
-        
+
         subgraph In["INBOUND PATH"]
             I1["Discord RTP<br/>In"]
             I2["Phase 2<br/>Manager"]
@@ -223,37 +223,37 @@ graph TB
             I4["Phase 4<br/>STT"]
             I5["Phase 6<br/>Router"]
             I6["Agent<br/>Rue"]
-            
+
             I1 -->|Opus| I2
             I2 -->|Opus| I3
             I3 -->|PCM| I4
             I4 -->|Text| I5
             I5 -->|Intent| I6
         end
-        
+
         subgraph Out["OUTBOUND PATH"]
             O1["Agent<br/>Response"]
             O2["Phase 5<br/>TTS"]
             O3["Phase 3<br/>Playback"]
             O4["Phase 2<br/>Manager"]
             O5["Discord RTP<br/>Out"]
-            
+
             O1 -->|Text| O2
             O2 -->|PCM| O3
             O3 -->|Opus| O4
             O4 -->|Opus| O5
         end
-        
+
         I6 -.->|Response| O1
     end
-    
+
     style I1 fill:#e3f2fd
     style I2 fill:#7c3aed
     style I3 fill:#7c3aed
     style I4 fill:#f3e5f5
     style I5 fill:#ec4899
     style I6 fill:#ec4899
-    
+
     style O1 fill:#ec4899
     style O2 fill:#e8f5e9
     style O3 fill:#7c3aed
@@ -266,45 +266,45 @@ graph TB
 ```mermaid
 graph TD
     Start["User speaks<br/>in voice channel"]
-    
+
     Start --> STT["STT Pipeline<br/>Call Whisper API"]
-    
+
     STT -->|Success| Parse["Parse transcript"]
     STT -->|Whisper API<br/>Unavailable| STTFail["❌ STT Failed"]
     STT -->|Rate Limited| STTLimit["⏳ Rate Limited<br/>Wait & Retry"]
-    
+
     STTFail --> TTSFail["Send response<br/>as text"]
     STTFail --> End1["User sees<br/>text in Discord"]
-    
+
     STTLimit --> STT
-    
+
     Parse --> Agent["Call Agent"]
     Agent -->|Success| Response["Agent Response"]
     Agent -->|Timeout >30s| Timeout["⏱️ Timeout"]
-    
+
     Timeout --> TTSPartial["Send partial<br/>response"]
-    
+
     Response --> TTS["TTS Pipeline<br/>Call ElevenLabs API"]
     TTSPartial --> TTS
-    
+
     TTS -->|Success| Playback["Encode & Playback"]
     TTS -->|ElevenLabs<br/>Unavailable| TTSFail
     TTS -->|Rate Limited| TTSLimit["⏳ Rate Limited<br/>Wait & Retry"]
-    
+
     TTSLimit --> TTS
-    
+
     Playback --> Disconnect{"Voice Channel<br/>Still Active?"}
-    
+
     Disconnect -->|Yes| Success["✓ Audio played"]
     Disconnect -->|No| DisconnectErr["⚠️ Disconnected<br/>During playback"]
-    
+
     Success --> End2["User hears<br/>response"]
     DisconnectErr --> End3["Response<br/>discarded"]
     End1 --> Done["Done"]
     End2 --> Done
     End3 --> Done
     TTSFail --> End1
-    
+
     style Start fill:#e3f2fd
     style Success fill:#c8e6c9
     style STTFail fill:#ffcdd2

@@ -5,6 +5,7 @@
 
 export class VoiceExtension {
   public readonly version = '0.1.0';
+
   public readonly name = 'VoiceExtension';
 
   constructor() {

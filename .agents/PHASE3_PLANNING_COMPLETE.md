@@ -25,6 +25,7 @@ The handler bridges captured/received audio and the network layer (**Phase 2: Vo
 ## Deliverables
 
 ✅ **PHASE3_PLAN.md** (17.2 KB)
+
 - Complete technical specification
 - Class designs with full method signatures
 - 8 core data structures
@@ -37,6 +38,7 @@ The handler bridges captured/received audio and the network layer (**Phase 2: Vo
 - Integration architecture with Phase 2
 
 ✅ **PHASE3_QUICK_REFERENCE.md** (8.5 KB)
+
 - Condensed implementation cheat sheet
 - Copy-paste data structure definitions
 - Error code enum (quick lookup)
@@ -46,6 +48,7 @@ The handler bridges captured/received audio and the network layer (**Phase 2: Vo
 - 5-minute read for builder agent
 
 ✅ **PHASE3_PLANNING_COMPLETE.md** (This document)
+
 - Sign-off summary
 - Scope verification
 - Risk assessment
@@ -58,18 +61,18 @@ The handler bridges captured/received audio and the network layer (**Phase 2: Vo
 
 ### ✅ Completed
 
-| Item | Status | Details |
-|------|--------|---------|
-| AudioStreamHandler design | ✅ | 14 core methods + 6 properties |
-| Opus encoder spec | ✅ | Input: 960 × 2 samples, Output: 20-60 bytes |
-| Opus decoder spec | ✅ | PLC for packet loss, FEC support |
-| Jitter buffer design | ✅ | Adaptive latency, RTP timestamp mapping |
-| Circular buffer design | ✅ | 100-frame capacity, wrap-around logic |
-| Error codes (enum) | ✅ | 8 error categories (1000-5000 range) |
-| Data structures | ✅ | AudioFrame, OpusFrame, BufferHealth, Stats |
-| Test suite (48 cases) | ✅ | TDD approach, organized by module |
-| Phase 2 integration | ✅ | Encode/decode interface, RTP metadata flow |
-| Performance targets | ✅ | Latency, CPU, memory, jitter bounds |
+| Item                      | Status | Details                                     |
+| ------------------------- | ------ | ------------------------------------------- |
+| AudioStreamHandler design | ✅     | 14 core methods + 6 properties              |
+| Opus encoder spec         | ✅     | Input: 960 × 2 samples, Output: 20-60 bytes |
+| Opus decoder spec         | ✅     | PLC for packet loss, FEC support            |
+| Jitter buffer design      | ✅     | Adaptive latency, RTP timestamp mapping     |
+| Circular buffer design    | ✅     | 100-frame capacity, wrap-around logic       |
+| Error codes (enum)        | ✅     | 8 error categories (1000-5000 range)        |
+| Data structures           | ✅     | AudioFrame, OpusFrame, BufferHealth, Stats  |
+| Test suite (48 cases)     | ✅     | TDD approach, organized by module           |
+| Phase 2 integration       | ✅     | Encode/decode interface, RTP metadata flow  |
+| Performance targets       | ✅     | Latency, CPU, memory, jitter bounds         |
 
 ### ⏭️ Deferred to Phase 4
 
@@ -85,6 +88,7 @@ The handler bridges captured/received audio and the network layer (**Phase 2: Vo
 ## Architecture Integrity
 
 ### Encoding Pipeline
+
 ```
 Local Audio (PCM)
     ↓
@@ -98,6 +102,7 @@ VoiceConnectionManager → RTP → UDP → Discord
 ```
 
 ### Decoding Pipeline
+
 ```
 Discord → UDP → RTP packet
     ↓
@@ -113,6 +118,7 @@ Playback
 ```
 
 ### Buffer Topology
+
 ```
 Jitter Buffer (5-20 frames)
     ↓ (adaptive playout scheduling)
@@ -123,6 +129,7 @@ Playback queue
 ```
 
 **Key Design Decisions:**
+
 1. **Two-buffer approach** separates timing (jitter) from storage (circular)
 2. **960-sample frames** fixed to 20ms @ 48kHz (Discord standard)
 3. **Float32Array** for PCM (native JS audio format)
@@ -137,21 +144,25 @@ Playback queue
 ### Runtime Dependencies
 
 ✅ **Phase 2: VoiceConnectionManager**
+
 - Provides: RTP packet structure, SSRC, sequence numbers
 - Consumes: AudioStreamHandler encode/decode interface
 - Interface: `encodeFrame(pcm) → Uint8Array`, `decodeFrame(opus) → Float32Array`
 
 ✅ **Opus Library**
+
 - Must support: 48kHz, stereo, 960-sample frames
 - Recommended: `libopus` (official reference) or `node-opus` (npm)
 - FEC & DTX support required
 
 ✅ **Audio I/O API**
+
 - Can use: Web Audio API, PortAudio, or platform-native APIs
 - Minimum: Capture & playback of Float32Array PCM
 - Latency: < 20 ms preferred
 
 ### External Libraries
+
 ```json
 {
   "dependencies": {
@@ -166,6 +177,7 @@ Playback queue
 ```
 
 ### Platform Compatibility
+
 - ✅ Node.js (with native audio bindings)
 - ✅ Electron (native modules + Web Audio API)
 - ⚠️ Browser (Web Audio API only, no raw capture)
@@ -177,17 +189,18 @@ Playback queue
 
 ### Test Matrix (48 Cases)
 
-| Category | Count | Status |
-|----------|-------|--------|
-| Initialization | 6 | Spec'd |
-| Audio Capture | 6 | Spec'd |
-| Opus Encoding | 8 | Spec'd |
-| Opus Decoding | 8 | Spec'd |
-| Jitter Buffer | 8 | Spec'd |
-| Circular Buffer | 6 | Spec'd |
-| Error Handling | 6 | Spec'd |
+| Category        | Count | Status |
+| --------------- | ----- | ------ |
+| Initialization  | 6     | Spec'd |
+| Audio Capture   | 6     | Spec'd |
+| Opus Encoding   | 8     | Spec'd |
+| Opus Decoding   | 8     | Spec'd |
+| Jitter Buffer   | 8     | Spec'd |
+| Circular Buffer | 6     | Spec'd |
+| Error Handling  | 6     | Spec'd |
 
 **Priority Tests (must pass first):**
+
 - TC-013: encodeFrame() produces valid Opus packet
 - TC-021: decodeFrame() produces valid PCM audio
 - TC-029: Jitter buffer enqueue/dequeue cycle
@@ -195,6 +208,7 @@ Playback queue
 - TC-043: Error callback fired on codec failure
 
 ### Quality Metrics
+
 - **Code coverage:** ≥ 85% (target)
 - **Performance latency:** Encode/decode < 5ms each
 - **Buffer underrun rate:** < 0.1% in normal conditions
@@ -269,16 +283,17 @@ Playback queue
 
 Based on industry benchmarks:
 
-| Metric | Baseline | Discord Target | Our Target |
-|--------|----------|---|---|
-| Opus encode | 2-5 ms | < 10 ms | < 5 ms |
-| Opus decode | 2-5 ms | < 10 ms | < 5 ms |
-| Jitter buffer | 0-40 ms | 0-50 ms | 0-40 ms |
-| Total E2E latency | < 100 ms | < 150 ms | < 100 ms |
-| CPU (dual core) | 3-8% | < 15% | < 10% |
-| Memory (100 frames) | 7-8 MB | < 50 MB | < 50 MB |
+| Metric              | Baseline | Discord Target | Our Target |
+| ------------------- | -------- | -------------- | ---------- |
+| Opus encode         | 2-5 ms   | < 10 ms        | < 5 ms     |
+| Opus decode         | 2-5 ms   | < 10 ms        | < 5 ms     |
+| Jitter buffer       | 0-40 ms  | 0-50 ms        | 0-40 ms    |
+| Total E2E latency   | < 100 ms | < 150 ms       | < 100 ms   |
+| CPU (dual core)     | 3-8%     | < 15%          | < 10%      |
+| Memory (100 frames) | 7-8 MB   | < 50 MB        | < 50 MB    |
 
 **Testing methodology:**
+
 - Measure encode/decode timing with profiler
 - Stress test with 10+ concurrent handlers
 - Monitor memory with heap snapshot
@@ -332,6 +347,7 @@ Phase 4: Advanced Audio Features
 **Next Step:** Builder agent implements AudioStreamHandler per PHASE3_PLAN.md
 
 **Estimated Implementation Time:** 5-7 business days
+
 - AudioStreamHandler skeleton: 1 day
 - Opus encoder/decoder wrappers: 1.5 days
 - Jitter + circular buffers: 1.5 days
@@ -343,13 +359,13 @@ Phase 4: Advanced Audio Features
 
 ## Quick Links
 
-| Document | Purpose |
-|----------|---------|
-| [PHASE3_PLAN.md](./PHASE3_PLAN.md) | Full technical specification (17.2 KB) |
-| [PHASE3_QUICK_REFERENCE.md](./PHASE3_QUICK_REFERENCE.md) | Builder cheat sheet (8.5 KB) |
-| Phase2_VoiceConnectionManager | Integration dependency |
-| [libopus.org](https://opus-codec.org) | Reference implementation |
-| [Discord Voice Gateway](https://discord.com/developers/docs/topics/voice-connections) | RTP packet specs |
+| Document                                                                              | Purpose                                |
+| ------------------------------------------------------------------------------------- | -------------------------------------- |
+| [PHASE3_PLAN.md](./PHASE3_PLAN.md)                                                    | Full technical specification (17.2 KB) |
+| [PHASE3_QUICK_REFERENCE.md](./PHASE3_QUICK_REFERENCE.md)                              | Builder cheat sheet (8.5 KB)           |
+| Phase2_VoiceConnectionManager                                                         | Integration dependency                 |
+| [libopus.org](https://opus-codec.org)                                                 | Reference implementation               |
+| [Discord Voice Gateway](https://discord.com/developers/docs/topics/voice-connections) | RTP packet specs                       |
 
 ---
 

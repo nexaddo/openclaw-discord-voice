@@ -17,9 +17,11 @@ Phase 3 planning for **AudioStreamHandler** (Audio Stream Manager) is **complete
 ## Three Planning Documents Created ✅
 
 ### 1. **PHASE3_PLAN.md** (1,615 lines / 44 KB)
+
 **Comprehensive Technical Design**
 
 Complete specification covering:
+
 - Audio stream architecture and Discord specs (48kHz, stereo, 20ms frames)
 - AudioStreamHandler class design (12+ public methods, 11+ private methods)
 - Complete type definitions (8+ interfaces, CircularBuffer<T>, error types)
@@ -35,9 +37,11 @@ Complete specification covering:
 **What Implementation Agent Needs:** Read Parts 1-9 while implementing, reference Parts 10-13 as needed.
 
 ### 2. **PHASE3_QUICK_REFERENCE.md** (523 lines / 14 KB)
+
 **Implementation Cheat Sheet**
 
 Quick navigation guide including:
+
 - Section summaries of PHASE3_PLAN.md with page references
 - Implementation flow (TDD approach)
 - Key implementation details (class API, buffers, codec specs)
@@ -53,9 +57,11 @@ Quick navigation guide including:
 **What Implementation Agent Needs:** Bookmark this for quick lookups during coding.
 
 ### 3. **PHASE3_PLANNING_COMPLETE.md** (479 lines / 13 KB)
+
 **Sign-Off Summary**
 
 Planning completion verification including:
+
 - What was accomplished in planning
 - Key design decisions and rationale
 - Architecture highlights and diagrams
@@ -73,24 +79,25 @@ Planning completion verification including:
 
 ## Planning Contents at a Glance
 
-| Aspect | Details | Coverage |
-|--------|---------|----------|
-| **Class Design** | AudioStreamHandler with 12+ methods | ✅ Complete |
-| **Audio Capture** | From Discord voice channels | ✅ Complete |
-| **Audio Playback** | To Discord voice channels | ✅ Complete |
-| **Buffer Management** | Circular buffers, 3-tier strategy | ✅ Complete |
-| **Opus Codec** | Encoding (PCM→Opus) & Decoding (Opus→PCM) | ✅ Complete |
-| **Type Definitions** | 8+ interfaces, error types, generic buffer | ✅ Complete |
-| **Test Cases** | 48 comprehensive tests, 8 sections | ✅ Complete |
-| **Error Handling** | 8 error types with recovery strategies | ✅ Complete |
-| **Integration** | Clear connection to Phase 2 | ✅ Complete |
-| **Documentation** | 2,617 lines organized and detailed | ✅ Complete |
+| Aspect                | Details                                    | Coverage    |
+| --------------------- | ------------------------------------------ | ----------- |
+| **Class Design**      | AudioStreamHandler with 12+ methods        | ✅ Complete |
+| **Audio Capture**     | From Discord voice channels                | ✅ Complete |
+| **Audio Playback**    | To Discord voice channels                  | ✅ Complete |
+| **Buffer Management** | Circular buffers, 3-tier strategy          | ✅ Complete |
+| **Opus Codec**        | Encoding (PCM→Opus) & Decoding (Opus→PCM)  | ✅ Complete |
+| **Type Definitions**  | 8+ interfaces, error types, generic buffer | ✅ Complete |
+| **Test Cases**        | 48 comprehensive tests, 8 sections         | ✅ Complete |
+| **Error Handling**    | 8 error types with recovery strategies     | ✅ Complete |
+| **Integration**       | Clear connection to Phase 2                | ✅ Complete |
+| **Documentation**     | 2,617 lines organized and detailed         | ✅ Complete |
 
 ---
 
 ## Key Design Highlights
 
 ### AudioStreamHandler Class
+
 - **Purpose:** Bridge between VoiceConnectionManager (Phase 2) and audio processing (Phases 4-5)
 - **Lifecycle:** initialize() → startCapture() → [process audio] → stopCapture() → destroy()
 - **Core Responsibilities:**
@@ -103,6 +110,7 @@ Planning completion verification including:
   - Handle errors gracefully
 
 ### Three-Tier Buffer Strategy
+
 ```
 Discord Audio Stream
         ↓
@@ -116,12 +124,14 @@ Discord Audio Stream
 ```
 
 ### Opus Integration
+
 - **Encoding:** PCM 3,840 bytes (20ms @ 48kHz) → Opus 20-60 bytes
 - **Decoding:** Opus packet → PCM 3,840 bytes
 - **Per-User Decoders:** Map<ssrc, OpusDecoder> for concurrent users
 - **Speed:** <5ms per frame, suitable for real-time processing
 
 ### Event System
+
 - Observer pattern via addEventListener()
 - Events: frameCaptured, frameDropped, userStartedSpeaking, userStoppedSpeaking, playbackBufferLow, playbackBufferFull, error
 - Multiple listeners supported
@@ -130,17 +140,17 @@ Discord Audio Stream
 
 ## Test Coverage (48 Tests)
 
-| Section | Focus | Tests |
-|---------|-------|-------|
-| A | Constructor & Initialization | 6 |
-| B | Audio Capture | 10 |
-| C | Audio Playback | 10 |
-| D | Opus Encoding | 8 |
-| E | Opus Decoding | 8 |
-| F | Buffer Management | 6 |
-| G | User Audio Streams | 4 |
-| H | Error Handling | 4 |
-| **Total** | | **48** |
+| Section   | Focus                        | Tests  |
+| --------- | ---------------------------- | ------ |
+| A         | Constructor & Initialization | 6      |
+| B         | Audio Capture                | 10     |
+| C         | Audio Playback               | 10     |
+| D         | Opus Encoding                | 8      |
+| E         | Opus Decoding                | 8      |
+| F         | Buffer Management            | 6      |
+| G         | User Audio Streams           | 4      |
+| H         | Error Handling               | 4      |
+| **Total** |                              | **48** |
 
 All test cases fully designed, ready to implement using TDD.
 
@@ -171,6 +181,7 @@ All test cases fully designed, ready to implement using TDD.
 ## Success Criteria
 
 ### Functional (9 items)
+
 ✅ Capture audio from multiple Discord users
 ✅ Play audio back to Discord channel
 ✅ Handle Opus encoding without errors
@@ -182,6 +193,7 @@ All test cases fully designed, ready to implement using TDD.
 ✅ Clean up resources on destroy
 
 ### Audio Quality (6 items)
+
 ✅ Maintain 48kHz sample rate (strictly)
 ✅ Preserve stereo (2 channel) format
 ✅ Support 20ms audio frames (960 samples)
@@ -190,6 +202,7 @@ All test cases fully designed, ready to implement using TDD.
 ✅ Recover from frame loss
 
 ### Code Quality (8 items)
+
 ✅ 48/48 tests passing
 ✅ >85% code coverage
 ✅ Full TypeScript type safety
@@ -200,6 +213,7 @@ All test cases fully designed, ready to implement using TDD.
 ✅ Proper error handling
 
 ### Integration (5 items)
+
 ✅ Works with Phase 2 VoiceConnectionManager
 ✅ Compatible with Phase 4 STT
 ✅ Compatible with Phase 5 TTS
@@ -213,6 +227,7 @@ All test cases fully designed, ready to implement using TDD.
 Phase 3 builds directly on Phase 2's success:
 
 **Phase 2 Provides:** ✅
+
 - VoiceConnectionManager class
 - Connection state tracking
 - Event emission system
@@ -221,12 +236,14 @@ Phase 3 builds directly on Phase 2's success:
 - Full TypeScript type safety
 
 **Phase 3 Uses:** ✅
+
 - VoiceConnection from Phase 2
 - Connection state events
 - Error handling framework
 - Type patterns
 
 **Integration Pattern:**
+
 ```typescript
 // Phase 2: Create connection
 const connManager = new VoiceConnectionManager(client);
@@ -247,11 +264,13 @@ await audioHandler.playAudioStream(pcmBuffer);
 ## Documentation Quality
 
 **2,617 Total Lines of Planning**
+
 - Main plan: 1,615 lines (44 KB)
 - Quick reference: 523 lines (14 KB)
 - Sign-off summary: 479 lines (13 KB)
 
 **Content Organization**
+
 - Clear section structure with TOC
 - Code examples for each component
 - Architecture diagrams and flows
@@ -262,6 +281,7 @@ await audioHandler.playAudioStream(pcmBuffer);
 - Q&A section
 
 **Handoff to Implementation**
+
 - Everything needed to build Phase 3 is documented
 - No guessing or assumptions required
 - Step-by-step implementation path
@@ -273,6 +293,7 @@ await audioHandler.playAudioStream(pcmBuffer);
 ## Verification Checklist ✅
 
 **Planning Quality:**
+
 - ✅ Architecture well-designed
 - ✅ Class structure clear
 - ✅ All types specified
@@ -283,6 +304,7 @@ await audioHandler.playAudioStream(pcmBuffer);
 - ✅ Error handling complete
 
 **Completeness:**
+
 - ✅ No missing features
 - ✅ All requirements specified
 - ✅ Success criteria defined
@@ -293,6 +315,7 @@ await audioHandler.playAudioStream(pcmBuffer);
 - ✅ Deliverables precise
 
 **Implementation Readiness:**
+
 - ✅ Zero blockers
 - ✅ All dependencies available
 - ✅ Phase 2 complete (50/50 tests)
@@ -332,6 +355,7 @@ Plus Phase 2 documents:
 **Timeline:** 2.5-3.5 hours
 
 **Expected Result:**
+
 - AudioStreamHandler.ts implemented (~800 lines)
 - 48 tests all passing
 - TypeScript build successful
@@ -339,6 +363,7 @@ Plus Phase 2 documents:
 - Integration with Phase 2 verified
 
 **Key Phases:**
+
 - 3.1: Setup & Types (30 min)
 - 3.2: Write Tests (60 min)
 - 3.3: Implementation (90 min, 8 sub-steps)
@@ -347,6 +372,7 @@ Plus Phase 2 documents:
 ### For Code Review Agent
 
 **Watch for:**
+
 - All 48 tests passing (npm test)
 - TypeScript strict mode clean (npx tsc --noEmit)
 - JSDoc on all public methods
@@ -370,6 +396,7 @@ Plus Phase 2 documents:
 **Success Probability:** 95%+
 
 **Why Low Risk:**
+
 - Comprehensive planning (no unknowns)
 - Proven patterns (circular buffers, observer pattern)
 - Mature dependencies (@discordjs/voice, @discordjs/opus)
@@ -383,21 +410,25 @@ Plus Phase 2 documents:
 ## Documentation Reference
 
 **Main Planning Document**
+
 - **Read:** PHASE3_PLAN.md (45-60 min)
 - **Covers:** All aspects of Phase 3 design
 - **Use During:** Detailed implementation decisions
 
 **Quick Reference**
+
 - **Read:** PHASE3_QUICK_REFERENCE.md (10-15 min)
 - **Covers:** Quick lookups during coding
 - **Use During:** Active implementation
 
 **Sign-Off Summary**
+
 - **Read:** PHASE3_PLANNING_COMPLETE.md (10 min)
 - **Covers:** What was planned and why
 - **Use Before:** Starting implementation
 
 **Verification Report**
+
 - **Read:** PHASE3_VERIFICATION_REPORT.md (reference)
 - **Covers:** Detailed verification of all elements
 - **Use For:** Confidence building
@@ -406,20 +437,20 @@ Plus Phase 2 documents:
 
 ## Key Metrics Summary
 
-| Metric | Value |
-|--------|-------|
-| **Documentation Lines** | 2,617 |
-| **Main Plan Lines** | 1,615 |
-| **Test Cases Designed** | 48 |
-| **Class Methods** | 12+ public |
-| **Type Definitions** | 8+ interfaces |
-| **Error Types** | 8 |
-| **Buffer Tiers** | 3 |
-| **Users Supported** | Unlimited concurrent |
-| **Target Latency** | <100ms |
-| **Target CPU** | <5% per stream |
-| **Implementation Time** | 2.5-3.5 hours |
-| **Success Probability** | 95%+ |
+| Metric                  | Value                |
+| ----------------------- | -------------------- |
+| **Documentation Lines** | 2,617                |
+| **Main Plan Lines**     | 1,615                |
+| **Test Cases Designed** | 48                   |
+| **Class Methods**       | 12+ public           |
+| **Type Definitions**    | 8+ interfaces        |
+| **Error Types**         | 8                    |
+| **Buffer Tiers**        | 3                    |
+| **Users Supported**     | Unlimited concurrent |
+| **Target Latency**      | <100ms               |
+| **Target CPU**          | <5% per stream       |
+| **Implementation Time** | 2.5-3.5 hours        |
+| **Success Probability** | 95%+                 |
 
 ---
 
@@ -428,6 +459,7 @@ Plus Phase 2 documents:
 ✅ **Phase 3 Planning: COMPLETE**
 
 All required documents created:
+
 1. PHASE3_PLAN.md (Comprehensive technical design)
 2. PHASE3_QUICK_REFERENCE.md (Implementation cheat sheet)
 3. PHASE3_PLANNING_COMPLETE.md (Sign-off summary)

@@ -12,23 +12,23 @@ import {
   PipelineStatus,
   DiscordPluginError,
   DiscordPluginErrorType,
-  ICommandHandler
-} from '../types.js';
+  ICommandHandler,
+ DiscordPluginConfig } from '../types.js';
 import { GuildStateManager } from '../state/GuildStateManager.js';
-import { DiscordPluginConfig } from '../types.js';
 
 /**
  * Handles voice commands
  */
 export class CommandHandler implements ICommandHandler {
   private stateManager: GuildStateManager;
+
   private config: DiscordPluginConfig;
 
   constructor(stateManager: GuildStateManager, config: DiscordPluginConfig = {}) {
     this.stateManager = stateManager;
     this.config = {
       debug: false,
-      ...config
+      ...config,
     };
   }
 
@@ -48,17 +48,14 @@ export class CommandHandler implements ICommandHandler {
           return {
             success: false,
             message: `Unknown command: ${command}`,
-            error: new DiscordPluginError(
-              DiscordPluginErrorType.CommandNotFound,
-              `Unknown command: ${command}`
-            )
+            error: new DiscordPluginError(DiscordPluginErrorType.CommandNotFound, `Unknown command: ${command}`),
           };
       }
     } catch (error) {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error',
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -72,7 +69,7 @@ export class CommandHandler implements ICommandHandler {
       if (!payload.question || payload.question.trim().length === 0) {
         return {
           success: false,
-          message: 'Question cannot be empty'
+          message: 'Question cannot be empty',
         };
       }
 
@@ -83,7 +80,7 @@ export class CommandHandler implements ICommandHandler {
       if (!state.activeUsers.has(payload.userId)) {
         return {
           success: false,
-          message: 'You must be in a voice channel to ask a question'
+          message: 'You must be in a voice channel to ask a question',
         };
       }
 
@@ -91,7 +88,7 @@ export class CommandHandler implements ICommandHandler {
       if (!payload.channelId) {
         return {
           success: false,
-          message: 'Bot does not have permission to join that voice channel'
+          message: 'Bot does not have permission to join that voice channel',
         };
       }
 
@@ -107,7 +104,7 @@ export class CommandHandler implements ICommandHandler {
 
       // In real implementation, would call Phase 6 pipeline here
       // For now, return success
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Return to listening mode
       state.voiceMode = VoiceMode.Listening;
@@ -118,14 +115,14 @@ export class CommandHandler implements ICommandHandler {
         message: '✅ Response played',
         data: {
           question: payload.question,
-          response: 'Mock response from Rue'
-        }
+          response: 'Mock response from Rue',
+        },
       };
     } catch (error) {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Error processing question',
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -141,7 +138,7 @@ export class CommandHandler implements ICommandHandler {
       if (!payload.channelId) {
         return {
           success: false,
-          message: 'You must be in a voice channel to start voice mode'
+          message: 'You must be in a voice channel to start voice mode',
         };
       }
 
@@ -149,7 +146,7 @@ export class CommandHandler implements ICommandHandler {
       if (state.voiceMode !== VoiceMode.Off && state.channelId === payload.channelId) {
         return {
           success: true,
-          message: `Voice mode is already running in <#${payload.channelId}>`
+          message: `Voice mode is already running in <#${payload.channelId}>`,
         };
       }
 
@@ -169,13 +166,13 @@ export class CommandHandler implements ICommandHandler {
 
       return {
         success: true,
-        message: `✅ Voice mode started in <#${payload.channelId}>`
+        message: `✅ Voice mode started in <#${payload.channelId}>`,
       };
     } catch (error) {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Error starting voice mode',
-        error: error as Error
+        error: error as Error,
       };
     }
   }
@@ -190,7 +187,7 @@ export class CommandHandler implements ICommandHandler {
       if (!state || state.voiceMode === VoiceMode.Off) {
         return {
           success: false,
-          message: 'Voice mode is not currently active in this guild'
+          message: 'Voice mode is not currently active in this guild',
         };
       }
 
@@ -212,13 +209,13 @@ export class CommandHandler implements ICommandHandler {
 
       return {
         success: true,
-        message: '✅ Voice mode stopped'
+        message: '✅ Voice mode stopped',
       };
     } catch (error) {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Error stopping voice mode',
-        error: error as Error
+        error: error as Error,
       };
     }
   }

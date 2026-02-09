@@ -9,6 +9,7 @@
 ## Executive Summary
 
 Phase 5 implements the **Text-to-Speech Pipeline** with **dual-mode operation**:
+
 - **Primary:** ElevenLabs TTS API (cloud-based, high-quality voices)
 - **Fallback:** Offline TTS library (zero-cost, works without API keys)
 
@@ -45,6 +46,7 @@ Text Input ("Hello, how are you?")
 **When to use:** `ELEVENLABS_API_KEY` is set and valid
 
 **Implementation:**
+
 - Voice: nova (default, warm feminine voice)
 - Audio format: PCM (request from API)
 - Sample rate: 48kHz (Discord standard)
@@ -54,6 +56,7 @@ Text Input ("Hello, how are you?")
 - Quality: High-fidelity, natural-sounding
 
 **Configuration:**
+
 ```env
 ELEVENLABS_API_KEY=sk_...
 ELEVENLABS_VOICE_ID=nova      # nova, alloy, echo, fable, onyx, shimmer
@@ -78,6 +81,7 @@ TTS_MODE=cloud  # auto-detected if API key present
 **When to use:** `ELEVENLABS_API_KEY` is NOT set
 
 **Why pyttsx3:**
+
 - ✅ Open-source (MIT license)
 - ✅ Works offline (no internet required)
 - ✅ Cross-platform (Windows, macOS, Linux)
@@ -87,6 +91,7 @@ TTS_MODE=cloud  # auto-detected if API key present
 - ✅ Supports speech rate/pitch control
 
 **Installation:**
+
 ```bash
 npm install pyttsx3
 # System dependencies:
@@ -96,6 +101,7 @@ npm install pyttsx3
 ```
 
 **Configuration:**
+
 ```env
 # No ELEVENLABS_API_KEY = auto-fall back to pyttsx3
 TTS_MODE=offline  # auto-detected if API key missing
@@ -111,6 +117,7 @@ PYTTSX3_PITCH=1.0  # 0.0-2.0 (default: 1.0)
 | pyttsx3 (offline) | 70-80% (robotic) | 100-500ms | $0 | ✅ | 2-5 system |
 
 **User Experience:**
+
 - ElevenLabs: High-quality, natural-sounding voices, slight network delay
 - pyttsx3: Lower quality, robotic, instant synthesis, no internet needed
 
@@ -126,7 +133,7 @@ export class TextToSpeech {
   private elevenlabsClient?: ElevenLabs;
   private pyttsx3Engine?: any;
   private cache: Map<string, Buffer>;  // Hash → audio PCM
-  
+
   constructor(options?: TTSOptions) {
     // Auto-detect mode based on API key presence
     if (process.env.ELEVENLABS_API_KEY) {
@@ -137,7 +144,7 @@ export class TextToSpeech {
       this.pyttsx3Engine = createEngine();
     }
   }
-  
+
   // Synthesize text to PCM audio
   async synthesizeAudio(text: string): Promise<Buffer> {
     if (this.mode === 'cloud') {
@@ -146,14 +153,14 @@ export class TextToSpeech {
       return this.synthesizeWithPyttsx3(text);
     }
   }
-  
+
   private async synthesizeWithElevenLabs(text: string): Promise<Buffer> {
     // Check cache
     const hash = hashText(text);
     if (this.cache.has(hash)) {
       return this.cache.get(hash)!;
     }
-    
+
     // Call ElevenLabs API
     const audioStream = await this.elevenlabsClient!.generate({
       text: text,
@@ -161,42 +168,42 @@ export class TextToSpeech {
       model_id: 'eleven_turbo',
       output_format: 'pcm_44100'  // Will convert to 48kHz
     });
-    
+
     // Convert to PCM buffer
     const pcmBuffer = await this.convertToDiscordFormat(audioStream);
-    
+
     // Cache result (60 min TTL)
     this.cache.set(hash, pcmBuffer);
     setTimeout(() => this.cache.delete(hash), 60 * 60 * 1000);
-    
+
     return pcmBuffer;
   }
-  
+
   private async synthesizeWithPyttsx3(text: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       try {
         const tempFile = `/tmp/tts_${Date.now()}.wav`;
-        
+
         // Synthesize to WAV file
         this.pyttsx3Engine.save_to_file(text, tempFile);
         this.pyttsx3Engine.runAndWait();
-        
+
         // Read WAV file
         const wavBuffer = fs.readFileSync(tempFile);
-        
+
         // Convert to PCM 48kHz stereo (Discord format)
         const pcmBuffer = this.convertWavToPcm(wavBuffer, 48000, 2);
-        
+
         // Clean up temp file
         fs.unlinkSync(tempFile);
-        
+
         resolve(pcmBuffer);
       } catch (err) {
         reject(err);
       }
     });
   }
-  
+
   private async convertToDiscordFormat(input: Buffer): Promise<Buffer> {
     // Input: 44.1kHz PCM or MP3
     // Output: 48kHz stereo PCM
@@ -217,6 +224,7 @@ export class TextToSpeech {
 ### Test Cases (60 total)
 
 **Section A: Mode Detection (8 tests)**
+
 - ✅ Detect cloud mode when API key present
 - ✅ Detect offline mode when API key missing
 - ✅ Fallback from cloud to offline on API error
@@ -227,6 +235,7 @@ export class TextToSpeech {
 - ✅ Cache mode selection across sessions
 
 **Section B: ElevenLabs API (20 tests)**
+
 - ✅ Synthesize short text (<100 chars)
 - ✅ Synthesize long text (>1000 chars with chunking)
 - ✅ Handle API rate limiting (429)
@@ -249,6 +258,7 @@ export class TextToSpeech {
 - ✅ Graceful degradation on quota exceeded
 
 **Section C: pyttsx3 Offline (18 tests)**
+
 - ✅ Synthesize text without API key
 - ✅ Return audio in <500ms
 - ✅ Support different voices
@@ -269,6 +279,7 @@ export class TextToSpeech {
 - ✅ Handle corrupted synthesis
 
 **Section D: Error Handling & Fallback (8 tests)**
+
 - ✅ Graceful fallback from cloud to offline
 - ✅ User-friendly error messages
 - ✅ Log all errors
@@ -279,6 +290,7 @@ export class TextToSpeech {
 - ✅ Recover from transient errors
 
 **Section E: Audio Format Conversion (6 tests)**
+
 - ✅ Convert 44.1kHz to 48kHz
 - ✅ Convert mono to stereo
 - ✅ Convert MP3 to PCM
@@ -313,26 +325,28 @@ TTS_LOG_LEVEL=info            # debug | info | warn | error
 
 ### Default Behavior
 
-| Scenario | Behavior |
-|----------|----------|
-| API key present | Use ElevenLabs API |
-| API key missing | Use pyttsx3 offline |
-| API key invalid | Fall back to pyttsx3 |
+| Scenario               | Behavior                            |
+| ---------------------- | ----------------------------------- |
+| API key present        | Use ElevenLabs API                  |
+| API key missing        | Use pyttsx3 offline                 |
+| API key invalid        | Fall back to pyttsx3                |
 | API rate limited (429) | Retry 3x with backoff, then pyttsx3 |
-| API timeout | Fall back to pyttsx3 |
-| pyttsx3 unavailable | Error with helpful message |
-| Both fail | Error with helpful message |
+| API timeout            | Fall back to pyttsx3                |
+| pyttsx3 unavailable    | Error with helpful message          |
+| Both fail              | Error with helpful message          |
 
 ---
 
 ## Integration Points
 
 ### Phase 3 (AudioStreamHandler)
+
 - Input: PCM audio data (from TextToSpeech)
 - Output: Formatted for playback (Opus encoding, RTP packets)
 - Latency: 100-500ms (pyttsx3) or 1-2s (ElevenLabs)
 
 ### Phase 6 (Voice Command Pipeline)
+
 - Consumes: Agent response text
 - Produces: Synthesized audio to play back
 
@@ -367,11 +381,13 @@ User provides ELEVENLABS_API_KEY?
 ## Cost Model
 
 ### ElevenLabs API
+
 - $0.30 per 1M characters
 - Batch up to 5000 chars per request
 - Example: 10M chars/month = $3/month
 
 ### pyttsx3 (Offline)
+
 - Free (open-source)
 - One-time system setup (espeak on Linux)
 - Zero ongoing costs
@@ -382,17 +398,20 @@ User provides ELEVENLABS_API_KEY?
 ## Success Criteria
 
 ✅ Cloud mode (ElevenLabs):
+
 - Audio quality high (natural-sounding voices)
 - Latency 1-2 seconds
 - Graceful fallback on API error
 
 ✅ Offline mode (pyttsx3):
+
 - Audio quality acceptable (robotic but understandable)
 - Latency <500ms
 - Works without internet
 - All system voices supported
 
 ✅ Fallback mechanism:
+
 - Seamless switching between modes
 - User-friendly error messages
 - All errors logged (without leaking keys)
@@ -421,6 +440,7 @@ User provides ELEVENLABS_API_KEY?
 **Previous Implementation:** ✅ Complete (ElevenLabs API only)
 **Updated Plan:** Add pyttsx3 offline fallback capability
 **Implementation Approach:**
+
 - Keep existing ElevenLabs implementation
 - Add pyttsx3 support with mode detection
 - Add fallback logic (cloud → offline)

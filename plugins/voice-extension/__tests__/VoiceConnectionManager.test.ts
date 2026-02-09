@@ -4,7 +4,7 @@ import {
   VoiceErrorType,
   ConnectionStateType,
   ConnectionState,
-  VoiceConnectionError
+  VoiceConnectionError,
 } from '../src/index';
 
 // ============================================================================
@@ -51,7 +51,7 @@ describe('VoiceConnectionManager', () => {
     it('should accept optional configuration', () => {
       const options = {
         connectionTimeout: 5000,
-        maxRejoinAttempts: 5
+        maxRejoinAttempts: 5,
       };
       manager = new VoiceConnectionManager(mockBotClient, options);
       expect(manager).toBeDefined();
@@ -128,7 +128,9 @@ describe('VoiceConnectionManager', () => {
       expect(stateChanges.length).toBeGreaterThan(0);
       // First event should be Signalling, last should be Ready
       const firstState = stateChanges[0].newState.status;
-      expect([ConnectionStateType.Signalling, ConnectionStateType.Connecting, ConnectionStateType.Ready]).toContain(firstState);
+      expect([ConnectionStateType.Signalling, ConnectionStateType.Connecting, ConnectionStateType.Ready]).toContain(
+        firstState,
+      );
     });
 
     it('should throw INVALID_GUILD error for non-existent guild', async () => {
@@ -190,7 +192,7 @@ describe('VoiceConnectionManager', () => {
 
       const connection = await manager.connect(guildId, channelId, {
         selfMute: false,
-        selfDeaf: false
+        selfDeaf: false,
       });
 
       expect(connection).toBeDefined();
@@ -201,7 +203,7 @@ describe('VoiceConnectionManager', () => {
       const channelId = 'channel-456';
 
       const connection = await manager.connect(guildId, channelId, {
-        group: 'custom-group'
+        group: 'custom-group',
       });
 
       expect(connection).toBeDefined();
@@ -412,7 +414,7 @@ describe('VoiceConnectionManager', () => {
 
     it('should not emit events if emitEvents option is false', async () => {
       manager = new VoiceConnectionManager(mockBotClient, {
-        emitEvents: false
+        emitEvents: false,
       });
 
       let eventEmitted = false;
@@ -515,7 +517,7 @@ describe('VoiceConnectionManager', () => {
 
     it('should clear timeouts on destroy', async () => {
       manager = new VoiceConnectionManager(mockBotClient, {
-        connectionTimeout: 5000
+        connectionTimeout: 5000,
       });
 
       // Start a connection
@@ -525,7 +527,7 @@ describe('VoiceConnectionManager', () => {
       await manager.destroy();
 
       // No timeout should occur after destroy
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
       expect(manager.getAllConnections().size).toBe(0);
     });
   });
@@ -686,7 +688,7 @@ describe('VoiceConnectionManager', () => {
 
       // Setup: destroy manager after a brief delay to catch it mid-operation
       const connectPromise = manager.connect(guildId, channelId);
-      
+
       // If we can catch the manager in a state where it's destroyed
       // the error should be INVALID_STATE
       const connection = await connectPromise;
@@ -745,45 +747,39 @@ function createMockBotClient(): any {
       ['guild-slow', createMockGuild('guild-slow', ['channel-456'], true)],
     ]),
     user: {
-      id: 'bot-user-id'
+      id: 'bot-user-id',
     },
     voice: {
-      adapters: new Map()
+      adapters: new Map(),
     },
     ws: {
-      on: vi.fn()
-    }
+      on: vi.fn(),
+    },
   };
 }
 
 /**
  * Creates a mock guild
  */
-function createMockGuild(
-  guildId: string,
-  channelIds: string[],
-  hasPermissions: boolean = true
-): any {
+function createMockGuild(guildId: string, channelIds: string[], hasPermissions: boolean = true): any {
   return {
     id: guildId,
     channels: {
-      cache: new Map(
-        channelIds.map(id => [id, createMockVoiceChannel(id, guildId, hasPermissions)])
-      ),
+      cache: new Map(channelIds.map((id) => [id, createMockVoiceChannel(id, guildId, hasPermissions)])),
       fetch: vi.fn((id) => {
         if (channelIds.includes(id)) {
           return Promise.resolve(createMockVoiceChannel(id, guildId, hasPermissions));
         }
         return Promise.reject(new Error('Channel not found'));
-      })
+      }),
     },
     members: {
       fetchMe: vi.fn(async () => ({
         permissions: {
-          has: vi.fn(() => hasPermissions)
-        }
-      }))
-    }
+          has: vi.fn(() => hasPermissions),
+        },
+      })),
+    },
   };
 }
 
@@ -796,7 +792,7 @@ function createMockVoiceChannel(channelId: string, guildId: string, hasPermissio
     type: 'GUILD_VOICE',
     isVoice: vi.fn(() => true),
     guild: {
-      id: guildId
+      id: guildId,
     },
     // Support channel-level permission checking
     permissionsFor: vi.fn((member: any) => {
@@ -810,8 +806,8 @@ function createMockVoiceChannel(channelId: string, guildId: string, hasPermissio
             return hasPermissions;
           }
           return false;
-        })
+        }),
       };
-    })
+    }),
   };
 }

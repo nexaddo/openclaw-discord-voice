@@ -1,6 +1,7 @@
 # Phase 8: Quick Reference
 
 ## Overview
+
 Final phase implementing CI/CD, containerization, and production deployment for Discord Voice Integration.
 
 **Timeline:** 4-7 days | **4 Sub-phases** | **10-Stage Pipeline**
@@ -8,6 +9,7 @@ Final phase implementing CI/CD, containerization, and production deployment for 
 ---
 
 ## Current State
+
 - ✅ Phases 1-7 complete, all on `main`
 - 199+ tests (173/183 passing, 10 timing failures)
 - ❌ No CI/CD, Docker, monitoring, deployment automation
@@ -17,6 +19,7 @@ Final phase implementing CI/CD, containerization, and production deployment for 
 ## Phase Breakdown
 
 ### Phase 8a: CI/CD Pipeline (1-2 days)
+
 - ESLint + Prettier config
 - GitHub Actions workflows (ci.yml, release.yml)
 - Codecov integration
@@ -24,6 +27,7 @@ Final phase implementing CI/CD, containerization, and production deployment for 
 - **Fix 10 failing tests** ← PRIORITY
 
 ### Phase 8b: Build & Deployment (1-2 days)
+
 - Dockerfile (multi-stage, <200MB)
 - Deploy/rollback/smoke-test scripts
 - Health check endpoint (`GET /health`)
@@ -31,6 +35,7 @@ Final phase implementing CI/CD, containerization, and production deployment for 
 - Environment configs (dev, staging, prod)
 
 ### Phase 8c: Monitoring (1 day)
+
 - Structured JSON logging
 - Sentry error tracking
 - Prometheus metrics
@@ -38,6 +43,7 @@ Final phase implementing CI/CD, containerization, and production deployment for 
 - Alert rules (PagerDuty + Slack)
 
 ### Phase 8d: Testing & Validation (1-2 days)
+
 - Load tests (10+ concurrent sessions)
 - Smoke tests (5 min validation)
 - Rollback procedure testing
@@ -60,11 +66,11 @@ Manual Approval → Deploy Production (Blue-Green)
 
 ## Deployment Strategy
 
-| Environment | Trigger | Deploy | Logging | Status |
-|-------------|---------|--------|---------|--------|
-| **Dev** | Local | Manual | Debug | Always |
-| **Staging** | Merge main | Auto/Manual | Info | Always |
-| **Prod** | Approval | Blue-Green | Error/Warn | Auto-rollback |
+| Environment | Trigger    | Deploy      | Logging    | Status        |
+| ----------- | ---------- | ----------- | ---------- | ------------- |
+| **Dev**     | Local      | Manual      | Debug      | Always        |
+| **Staging** | Merge main | Auto/Manual | Info       | Always        |
+| **Prod**    | Approval   | Blue-Green  | Error/Warn | Auto-rollback |
 
 ---
 
@@ -77,6 +83,7 @@ Manual Approval → Deploy Production (Blue-Green)
 **Error Tracking:** Sentry integration
 
 **Alerting:**
+
 - **Critical** (Discord #alerts-critical): Error rate >5%, latency >2s, health check fail
 - **Warning** (Discord #alerts-warning): Error rate >1%, latency >1s, memory >80%
 
@@ -85,6 +92,7 @@ Manual Approval → Deploy Production (Blue-Green)
 ## Rollback Strategy
 
 **Blue-Green Deployment:**
+
 - Deploy new version (Blue) alongside old (Green)
 - Route traffic to Blue after health checks pass
 - Keep Green ready for instant rollback

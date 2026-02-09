@@ -10,6 +10,7 @@
 ## 1. Overview
 
 The **AudioStreamHandler** manages audio I/O for Discord voice connections. It handles:
+
 - Audio frame capture from local sources
 - Jitter buffer management (incoming frames)
 - Circular buffer for frame storage
@@ -26,48 +27,48 @@ The **AudioStreamHandler** manages audio I/O for Discord voice connections. It h
 ```typescript
 class AudioStreamHandler {
   // Constructor
-  constructor(config: AudioStreamConfig)
+  constructor(config: AudioStreamConfig);
 
   // Lifecycle
-  initialize(): Promise<void>
-  shutdown(): Promise<void>
-  reset(): void
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  reset(): void;
 
   // Audio Input (Capture)
-  captureFrame(buffer: Float32Array): Promise<void>
-  startCapture(): Promise<void>
-  stopCapture(): Promise<void>
+  captureFrame(buffer: Float32Array): Promise<void>;
+  startCapture(): Promise<void>;
+  stopCapture(): Promise<void>;
 
   // Audio Output (Playback)
-  playFrame(audioBuffer: AudioBuffer): Promise<void>
-  startPlayback(): Promise<void>
-  stopPlayback(): Promise<void>
-  getPlaybackQueue(): AudioFrame[]
+  playFrame(audioBuffer: AudioBuffer): Promise<void>;
+  startPlayback(): Promise<void>;
+  stopPlayback(): Promise<void>;
+  getPlaybackQueue(): AudioFrame[];
 
   // Opus Encoding
-  encodeFrame(pcmData: Float32Array): Promise<Uint8Array>
-  encodeFrameBatch(frames: Float32Array[]): Promise<Uint8Array[]>
+  encodeFrame(pcmData: Float32Array): Promise<Uint8Array>;
+  encodeFrameBatch(frames: Float32Array[]): Promise<Uint8Array[]>;
 
   // Opus Decoding
-  decodeFrame(opusData: Uint8Array): Promise<Float32Array>
-  decodeFrameBatch(frames: Uint8Array[]): Promise<Float32Array[]>
+  decodeFrame(opusData: Uint8Array): Promise<Float32Array>;
+  decodeFrameBatch(frames: Uint8Array[]): Promise<Float32Array[]>;
 
   // Jitter Buffer Management
-  enqueuFrame(frame: AudioFrame): void
-  dequeueFrame(): AudioFrame | null
-  getBufferHealth(): BufferHealth
-  flushBuffer(): void
+  enqueuFrame(frame: AudioFrame): void;
+  dequeueFrame(): AudioFrame | null;
+  getBufferHealth(): BufferHealth;
+  flushBuffer(): void;
 
   // Statistics & Monitoring
-  getStats(): AudioStreamStats
-  resetStats(): void
-  getLatency(): number
-  getBufferOccupancy(): number
+  getStats(): AudioStreamStats;
+  resetStats(): void;
+  getLatency(): number;
+  getBufferOccupancy(): number;
 
   // Error Handling
-  onError(callback: ErrorHandler): void
-  clearErrorCallbacks(): void
-  getLastError(): AudioStreamError | null
+  onError(callback: ErrorHandler): void;
+  clearErrorCallbacks(): void;
+  getLastError(): AudioStreamError | null;
 }
 ```
 
@@ -76,32 +77,32 @@ class AudioStreamHandler {
 ```typescript
 interface AudioStreamConfig {
   // Audio parameters
-  sampleRate: number              // 48000 Hz (required)
-  channels: number                // 2 (stereo) or 1 (mono)
-  frameSize: number               // 960 samples per frame (20ms @ 48kHz)
-  bitRate: number                 // 128000 (128 kbps, default)
+  sampleRate: number; // 48000 Hz (required)
+  channels: number; // 2 (stereo) or 1 (mono)
+  frameSize: number; // 960 samples per frame (20ms @ 48kHz)
+  bitRate: number; // 128000 (128 kbps, default)
 
   // Buffer configuration
-  jitterBufferSize: number        // 5-20 frames
-  circularBufferCapacity: number  // 100 frames (max storage)
-  targetBufferLatency: number     // ms, default 40
+  jitterBufferSize: number; // 5-20 frames
+  circularBufferCapacity: number; // 100 frames (max storage)
+  targetBufferLatency: number; // ms, default 40
 
   // Codec settings
-  opusComplexity: number          // 0-10, default 5
-  useFEC: boolean                 // Forward Error Correction
-  useDTX: boolean                 // Discontinuous Transmission
-  maxPlaybackRate: number         // 48000 (Hz)
+  opusComplexity: number; // 0-10, default 5
+  useFEC: boolean; // Forward Error Correction
+  useDTX: boolean; // Discontinuous Transmission
+  maxPlaybackRate: number; // 48000 (Hz)
 
   // Device configuration
-  inputDeviceId?: string          // Audio input device
-  outputDeviceId?: string         // Audio output device
-  echoCancel?: boolean            // Echo cancellation
-  noiseSuppression?: boolean      // Noise suppression
+  inputDeviceId?: string; // Audio input device
+  outputDeviceId?: string; // Audio output device
+  echoCancel?: boolean; // Echo cancellation
+  noiseSuppression?: boolean; // Noise suppression
 
   // Error handling
-  maxRetries: number              // Default 3
-  timeoutMs: number               // Default 5000
-  enableMetrics: boolean          // Track latency, quality
+  maxRetries: number; // Default 3
+  timeoutMs: number; // Default 5000
+  enableMetrics: boolean; // Track latency, quality
 }
 ```
 
@@ -110,66 +111,66 @@ interface AudioStreamConfig {
 ```typescript
 // Audio Frame (input/output)
 interface AudioFrame {
-  timestamp: number               // milliseconds (monotonic)
-  sequenceNumber: number          // Frame counter
-  ssrc: number                    // Synchronization source (RTP)
-  data: Float32Array              // PCM audio data (48kHz, stereo)
-  sampleCount: number             // 960 samples typical
-  duration: number                // 20 ms typical
+  timestamp: number; // milliseconds (monotonic)
+  sequenceNumber: number; // Frame counter
+  ssrc: number; // Synchronization source (RTP)
+  data: Float32Array; // PCM audio data (48kHz, stereo)
+  sampleCount: number; // 960 samples typical
+  duration: number; // 20 ms typical
 }
 
 // Opus-encoded frame
 interface OpusFrame {
-  timestamp: number
-  sequenceNumber: number
-  ssrc: number
-  data: Uint8Array                // Opus-encoded bytes
-  size: number                    // Byte length
+  timestamp: number;
+  sequenceNumber: number;
+  ssrc: number;
+  data: Uint8Array; // Opus-encoded bytes
+  size: number; // Byte length
 }
 
 // Jitter buffer metadata
 interface JitterBufferFrame {
-  frame: AudioFrame
-  arrivalTime: number             // When frame arrived
-  playoutTime: number             // When to play
-  isPlayed: boolean
+  frame: AudioFrame;
+  arrivalTime: number; // When frame arrived
+  playoutTime: number; // When to play
+  isPlayed: boolean;
 }
 
 // Statistics
 interface AudioStreamStats {
-  framesProcessed: number
-  framesEncoded: number
-  framesDecoded: number
-  framesDropped: number
-  frameLoss: number               // Percentage
-  jitterMs: number                // Buffer jitter
-  latencyMs: number               // End-to-end
-  bufferOccupancy: number         // Frames in buffer
-  captureUnderrun: number         // Underrun events
-  playbackUnderrun: number        // Underrun events
-  cpuUsage: number                // Estimated %
-  codecQuality: number            // 0-100
+  framesProcessed: number;
+  framesEncoded: number;
+  framesDecoded: number;
+  framesDropped: number;
+  frameLoss: number; // Percentage
+  jitterMs: number; // Buffer jitter
+  latencyMs: number; // End-to-end
+  bufferOccupancy: number; // Frames in buffer
+  captureUnderrun: number; // Underrun events
+  playbackUnderrun: number; // Underrun events
+  cpuUsage: number; // Estimated %
+  codecQuality: number; // 0-100
 }
 
 // Buffer health status
 interface BufferHealth {
-  occupancy: number               // Current frame count
-  capacity: number                // Max capacity
-  percentFull: number             // 0-100
-  isUnderrun: boolean             // < 2 frames
-  isOverrun: boolean              // > 90% full
-  jitter: number                  // ms
-  recommendation: string          // "optimal" | "low" | "high" | "critical"
+  occupancy: number; // Current frame count
+  capacity: number; // Max capacity
+  percentFull: number; // 0-100
+  isUnderrun: boolean; // < 2 frames
+  isOverrun: boolean; // > 90% full
+  jitter: number; // ms
+  recommendation: string; // "optimal" | "low" | "high" | "critical"
 }
 
 // Error handling
 interface AudioStreamError {
-  code: AudioErrorCode
-  message: string
-  timestamp: number
-  context?: Record<string, any>
-  recoverable: boolean
-  retryCount: number
+  code: AudioErrorCode;
+  message: string;
+  timestamp: number;
+  context?: Record<string, any>;
+  recoverable: boolean;
+  retryCount: number;
 }
 
 enum AudioErrorCode {
@@ -212,32 +213,29 @@ enum AudioErrorCode {
 
 ```typescript
 class JitterBuffer {
-  constructor(
-    maxFrames: number,
-    targetLatency: number,
-    sampleRate: number
-  )
+  constructor(maxFrames: number, targetLatency: number, sampleRate: number);
 
   // Operations
-  enqueue(frame: AudioFrame): void
-  dequeue(): AudioFrame | null
-  peek(): AudioFrame | null
-  flush(): void
+  enqueue(frame: AudioFrame): void;
+  dequeue(): AudioFrame | null;
+  peek(): AudioFrame | null;
+  flush(): void;
 
   // Diagnostics
-  getHealth(): BufferHealth
-  getOccupancy(): number
-  getJitter(): number
-  hasUnderrun(): boolean
-  hasOverrun(): boolean
+  getHealth(): BufferHealth;
+  getOccupancy(): number;
+  getJitter(): number;
+  hasUnderrun(): boolean;
+  hasOverrun(): boolean;
 
   // Adaptive management
-  adjustTargetLatency(direction: 'increase' | 'decrease'): void
-  getRecommendedLatency(): number
+  adjustTargetLatency(direction: 'increase' | 'decrease'): void;
+  getRecommendedLatency(): number;
 }
 ```
 
 **Algorithm:**
+
 1. Frames arrive with RTP timestamp (not wall-clock time)
 2. Map RTP timestamp to playout time using target latency
 3. Store frames in priority queue (sorted by playout time)
@@ -251,35 +249,36 @@ class JitterBuffer {
 
 ```typescript
 class CircularAudioBuffer {
-  constructor(capacity: number, frameSize: number)
+  constructor(capacity: number, frameSize: number);
 
   // Write operations
-  writeFrame(frame: AudioFrame): void
-  write(samples: Float32Array): number  // Returns bytes written
+  writeFrame(frame: AudioFrame): void;
+  write(samples: Float32Array): number; // Returns bytes written
 
   // Read operations
-  readFrame(): AudioFrame | null
-  read(sampleCount: number): Float32Array | null
-  peek(): AudioFrame | null
+  readFrame(): AudioFrame | null;
+  read(sampleCount: number): Float32Array | null;
+  peek(): AudioFrame | null;
 
   // State
-  getOccupancy(): number
-  getCapacity(): number
-  isEmpty(): boolean
-  isFull(): boolean
-  reset(): void
+  getOccupancy(): number;
+  getCapacity(): number;
+  isEmpty(): boolean;
+  isFull(): boolean;
+  reset(): void;
 
   // Diagnostics
   getStats(): {
-    totalWritten: number
-    totalRead: number
-    overflow: number
-    underrun: number
-  }
+    totalWritten: number;
+    totalRead: number;
+    overflow: number;
+    underrun: number;
+  };
 }
 ```
 
 **Implementation Notes:**
+
 - Use typed array for efficiency (Float32Array for stereo interleaved)
 - Write head and read head with wrap-around
 - Pre-allocate memory to prevent GC pauses
@@ -309,29 +308,30 @@ Circular capacity = 100 frames × 7,680 = 768 KB
 ```typescript
 class OpusEncoder {
   constructor(
-    sampleRate: number,           // 48000
-    channels: number,             // 1 or 2
-    complexity: number,           // 0-10
+    sampleRate: number, // 48000
+    channels: number, // 1 or 2
+    complexity: number, // 0-10
     useFEC: boolean,
-    useDTX: boolean
-  )
+    useDTX: boolean,
+  );
 
-  encode(pcmData: Float32Array): Uint8Array
-  encodeFrame(frame: AudioFrame): OpusFrame
-  encodeBatch(frames: Float32Array[]): Uint8Array[]
+  encode(pcmData: Float32Array): Uint8Array;
+  encodeFrame(frame: AudioFrame): OpusFrame;
+  encodeBatch(frames: Float32Array[]): Uint8Array[];
 
   // Configuration
-  setBitRate(bitRate: number): void
-  setComplexity(level: number): void
-  getFrameSize(): number
-  getMaxFrameSize(): number
+  setBitRate(bitRate: number): void;
+  setComplexity(level: number): void;
+  getFrameSize(): number;
+  getMaxFrameSize(): number;
 
   // Cleanup
-  destroy(): void
+  destroy(): void;
 }
 ```
 
 **Frame Format:**
+
 - Input: 960 samples (20ms @ 48kHz) × 2 channels = Float32Array(1920)
 - Output: Variable-length Opus packet, typically 20-60 bytes
 - Opus defaults to 128 kbps for stereo
@@ -341,40 +341,41 @@ class OpusEncoder {
 ```typescript
 class OpusDecoder {
   constructor(
-    sampleRate: number,           // 48000
-    channels: number              // 1 or 2
-  )
+    sampleRate: number, // 48000
+    channels: number, // 1 or 2
+  );
 
-  decode(opusData: Uint8Array): Float32Array
-  decodeFrame(frame: OpusFrame): AudioFrame
-  decodeBatch(frames: Uint8Array[]): Float32Array[]
-  decodeLoss(frameSizeMs: number): Float32Array  // PLC
+  decode(opusData: Uint8Array): Float32Array;
+  decodeFrame(frame: OpusFrame): AudioFrame;
+  decodeBatch(frames: Uint8Array[]): Float32Array[];
+  decodeLoss(frameSizeMs: number): Float32Array; // PLC
 
   // State
-  getLastDecodedFrame(): AudioFrame | null
-  getFrameSize(): number
+  getLastDecodedFrame(): AudioFrame | null;
+  getFrameSize(): number;
 
   // Cleanup
-  destroy(): void
+  destroy(): void;
 }
 ```
 
 **Packet Loss Concealment (PLC):**
+
 - When packet missing, generate synthetic audio (silence + comfort noise)
 - Request frame size (20ms): 960 samples
 - Decoder fills with algorithm-generated audio to maintain continuity
 
 ### 4.3 Audio Frame Specifications
 
-| Property | Value | Notes |
-|----------|-------|-------|
-| Sample Rate | 48,000 Hz | Discord standard |
-| Channels | 2 (stereo) | Can downmix to mono |
-| Frame Size | 960 samples | 20ms duration |
-| Bit Depth | 32-bit float | PCM range: -1.0 to +1.0 |
-| Bitrate | 128 kbps | Opus VBR, adjustable |
-| Frame Duration | 20 ms | Fixed @ 48kHz |
-| Frames per second | 50 | (1000 / 20) |
+| Property          | Value        | Notes                   |
+| ----------------- | ------------ | ----------------------- |
+| Sample Rate       | 48,000 Hz    | Discord standard        |
+| Channels          | 2 (stereo)   | Can downmix to mono     |
+| Frame Size        | 960 samples  | 20ms duration           |
+| Bit Depth         | 32-bit float | PCM range: -1.0 to +1.0 |
+| Bitrate           | 128 kbps     | Opus VBR, adjustable    |
+| Frame Duration    | 20 ms        | Fixed @ 48kHz           |
+| Frames per second | 50           | (1000 / 20)             |
 
 ---
 
@@ -401,12 +402,13 @@ VoiceConnectionManager (Phase 2)
 ### 5.2 Method Integration
 
 **Sending Audio (Capture → Encode → Send):**
+
 ```typescript
 // In VoiceConnectionManager
 async sendAudio(pcmData: Float32Array) {
   // 1. AudioStreamHandler encodes
   const opusData = await handler.encodeFrame(pcmData);
-  
+
   // 2. Wrap in RTP packet
   const rtpPacket = voiceSocket.createRTPPacket(
     opusData,
@@ -414,27 +416,28 @@ async sendAudio(pcmData: Float32Array) {
     timestamp,
     ssrc
   );
-  
+
   // 3. Send over UDP
   await voiceSocket.send(rtpPacket);
 }
 ```
 
 **Receiving Audio (Receive → Decode → Playback):**
+
 ```typescript
 // In VoiceSocket listener
 voiceSocket.on('rtp', async (rtpPacket) => {
   // 1. Extract Opus payload
   const opusData = rtpPacket.payload;
-  
+
   // 2. AudioStreamHandler decodes
   const pcmData = await handler.decodeFrame({
     data: opusData,
     timestamp: rtpPacket.timestamp,
     sequenceNumber: rtpPacket.sequence,
-    ssrc: rtpPacket.ssrc
+    ssrc: rtpPacket.ssrc,
   });
-  
+
   // 3. Enqueue for playback
   await handler.playFrame(pcmData);
 });
@@ -443,6 +446,7 @@ voiceSocket.on('rtp', async (rtpPacket) => {
 ### 5.3 Dependencies
 
 **Imports from Phase 2:**
+
 ```typescript
 import { VoiceConnectionManager } from './VoiceConnectionManager';
 import { VoiceSocket } from './VoiceSocket';
@@ -450,6 +454,7 @@ import { RTPPacket, VoiceState } from './types';
 ```
 
 **Exports to Phase 2:**
+
 ```typescript
 export { AudioStreamHandler, AudioStreamConfig, AudioStreamError };
 export { AudioFrame, OpusFrame, BufferHealth, AudioStreamStats };
@@ -534,44 +539,44 @@ export { AudioFrame, OpusFrame, BufferHealth, AudioStreamStats };
 
 ### 7.1 Encoder Failures
 
-| Error | Recovery | Retry |
-|-------|----------|-------|
-| Invalid frame size | Log warning, skip frame | No |
-| Sample rate mismatch | Resample input | Yes (1×) |
-| Memory allocation | Clear buffer cache | Yes (2×) |
-| Encoder timeout | Reinitialize encoder | Yes (3×) |
+| Error                | Recovery                | Retry    |
+| -------------------- | ----------------------- | -------- |
+| Invalid frame size   | Log warning, skip frame | No       |
+| Sample rate mismatch | Resample input          | Yes (1×) |
+| Memory allocation    | Clear buffer cache      | Yes (2×) |
+| Encoder timeout      | Reinitialize encoder    | Yes (3×) |
 
 ### 7.2 Decoder Failures
 
-| Error | Recovery | Retry |
-|-------|----------|-------|
-| Corrupted Opus packet | PLC (generate silence) | No |
-| Invalid packet header | Skip, wait for next | No |
-| Sample rate mismatch | Resample output | Yes (1×) |
-| Memory allocation | Clear cache | Yes (2×) |
+| Error                 | Recovery               | Retry    |
+| --------------------- | ---------------------- | -------- |
+| Corrupted Opus packet | PLC (generate silence) | No       |
+| Invalid packet header | Skip, wait for next    | No       |
+| Sample rate mismatch  | Resample output        | Yes (1×) |
+| Memory allocation     | Clear cache            | Yes (2×) |
 
 ### 7.3 Buffer Failures
 
-| Error | Recovery | Retry |
-|-------|----------|-------|
-| Jitter buffer full | Drop oldest frame | No |
-| Circular buffer full | Drop capture frame | No |
-| Timestamp inversion | Detect discontinuity | No |
+| Error                | Recovery             | Retry |
+| -------------------- | -------------------- | ----- |
+| Jitter buffer full   | Drop oldest frame    | No    |
+| Circular buffer full | Drop capture frame   | No    |
+| Timestamp inversion  | Detect discontinuity | No    |
 
 ---
 
 ## 8. Performance Targets
 
-| Metric | Target | Tolerance |
-|--------|--------|-----------|
-| Encoding latency | < 5 ms | ± 2 ms |
-| Decoding latency | < 5 ms | ± 2 ms |
-| Buffer latency | 40 ms | ± 10 ms |
-| Total E2E latency | < 100 ms | ± 20 ms |
-| CPU usage | < 10% | per encoder/decoder |
-| Memory footprint | < 50 MB | including buffers |
-| Jitter | < 20 ms | RMS |
-| Frame loss handling | < 0.1% | recovery rate |
+| Metric              | Target   | Tolerance           |
+| ------------------- | -------- | ------------------- |
+| Encoding latency    | < 5 ms   | ± 2 ms              |
+| Decoding latency    | < 5 ms   | ± 2 ms              |
+| Buffer latency      | 40 ms    | ± 10 ms             |
+| Total E2E latency   | < 100 ms | ± 20 ms             |
+| CPU usage           | < 10%    | per encoder/decoder |
+| Memory footprint    | < 50 MB  | including buffers   |
+| Jitter              | < 20 ms  | RMS                 |
+| Frame loss handling | < 0.1%   | recovery rate       |
 
 ---
 
@@ -595,6 +600,7 @@ export { AudioFrame, OpusFrame, BufferHealth, AudioStreamStats };
 ## 10. Next Steps (Phase 4)
 
 Phase 4 will add:
+
 - Voice Activity Detection (VAD)
 - Noise suppression / echo cancellation
 - Advanced resampling

@@ -11,6 +11,7 @@
 This document provides the **high-level roadmap** for completing the Discord Voice Integration. All remaining phases are designed with **production deployment as the primary goal** — not a final phase afterthought.
 
 ### Key Principle
+
 > **Every phase must be deployable.** CI/CD is not Phase 8 overhead — it's built into every step.
 
 ---
@@ -18,9 +19,11 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 ## 📊 Phase Breakdown
 
 ### Phase 3: Audio Stream Handler (Days 1-2)
+
 **Goal:** Handle bidirectional audio in Discord voice channels
 
 **What it does:**
+
 - Captures audio from users speaking in voice channels
 - Encodes/decodes Opus audio format (Discord standard)
 - Manages audio buffers to handle network jitter
@@ -28,21 +31,25 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 - Tracks per-user audio streams with proper cleanup
 
 **Key Files:**
+
 - `src/AudioStreamHandler.ts` (main class)
 - `src/types.ts` (type definitions)
 - Tests: 48 test cases covering all scenarios
 
 **Dependencies:**
+
 - `@discordjs/voice` (already in Phase 2)
 - `opusscript` or `@discordjs/opus` (audio codec)
 - `prism-media` (format conversion)
 
 **Outputs (ready for Phase 4):**
+
 - Captured, encoded user audio data
 - Reliable buffer management system
 - Opus encoding/decoding pipeline
 
 **CI/CD Integration:**
+
 - Unit tests: 48/48 passing
 - Code coverage: >85%
 - GitHub Actions: Automated test runs on PR
@@ -50,9 +57,11 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 ---
 
 ### Phase 4: STT Integration (Whisper) (Days 2-3)
+
 **Goal:** Convert user speech → transcribed text
 
 **What it does:**
+
 - Takes Opus-encoded audio from Phase 3
 - Converts to WAV format for Whisper API
 - Calls OpenAI Whisper API (already configured skill)
@@ -60,21 +69,25 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 - Detects voice activity (when user stops speaking)
 
 **Key Files:**
+
 - `src/SpeechToText.ts` (main class)
 - `src/VoiceActivityDetector.ts` (VAD system)
 - Tests: 32 test cases
 
 **Dependencies:**
+
 - OpenAI Whisper API (via existing skill)
 - `sox` or `ffmpeg` (audio format conversion)
 
 **Outputs (ready for Phase 5):**
+
 - Transcribed user text
 - Confidence scores
 - Detected language
 - VAD trigger points
 
 **CI/CD Integration:**
+
 - STT unit tests: 32/32 passing
 - Mock Whisper API tests
 - Integration tests with Phase 3
@@ -82,9 +95,11 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 ---
 
 ### Phase 5: TTS Integration (ElevenLabs) (Days 3-4)
+
 **Goal:** Convert bot response text → natural speech audio
 
 **What it does:**
+
 - Takes response text from agent
 - Calls ElevenLabs API with "nova" voice (configured skill)
 - Receives audio in desired format
@@ -92,19 +107,23 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 - Streams back to voice channel
 
 **Key Files:**
+
 - `src/TextToSpeech.ts` (main class)
 - Tests: 28 test cases
 
 **Dependencies:**
+
 - ElevenLabs API (via `sag` skill)
 - Format conversion from Phase 3
 
 **Outputs (ready for Phase 6):**
+
 - Opus-encoded speech audio
 - Playback status tracking
 - Voice personality settings
 
 **CI/CD Integration:**
+
 - TTS unit tests: 28/28 passing
 - Mock ElevenLabs API tests
 - Integration tests with Phase 3
@@ -112,9 +131,11 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 ---
 
 ### Phase 6: Voice Command Pipeline (Days 4-5)
+
 **Goal:** Full end-to-end voice conversation loop
 
 **What it does:**
+
 - Orchestrates Phases 3, 4, 5
 - Receives audio → Transcribes → Sends to agent → Gets response → Synthesizes → Plays back
 - Handles concurrent voice connections
@@ -122,16 +143,19 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 - User feedback (typing indicator, status messages)
 
 **Key Files:**
+
 - `src/VoiceCommandPipeline.ts` (orchestration)
 - `src/PipelineErrors.ts` (error handling)
 - Tests: 36 test cases (end-to-end)
 
 **Outputs (ready for Phase 7):**
+
 - Fully functional voice interaction system
 - Error handling + recovery
 - Performance metrics
 
 **CI/CD Integration:**
+
 - Pipeline integration tests: 36/36 passing
 - Load tests (concurrent connections)
 - End-to-end scenario tests
@@ -139,28 +163,33 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 ---
 
 ### Phase 7: Discord Plugin Integration (Days 5-6)
+
 **Goal:** Expose voice commands through Discord slash commands
 
 **What it does:**
+
 - `/voice join` — bot joins your voice channel
-- `/voice leave` — bot leaves voice channel  
+- `/voice leave` — bot leaves voice channel
 - `/voice status` — shows connection status
 - `/voice listen` — enables auto-listening mode
 - Permission checks (admin-only if needed)
 - Persistent guild state management
 
 **Key Files:**
+
 - `plugins/discord/src/commands/voice.ts` (commands)
 - `plugins/discord/src/handlers/VoiceHandler.ts` (handler)
 - `plugins/voice-extension/src/GuildManager.ts` (state)
 - Tests: 40 test cases
 
 **Outputs (ready for Phase 8):**
+
 - Fully functional bot with voice commands
 - Works across multiple Discord servers
 - Production-ready permissions
 
 **CI/CD Integration:**
+
 - Command handler tests: 40/40 passing
 - Permission validation tests
 - Multi-guild scenario tests
@@ -169,9 +198,11 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 ---
 
 ### Phase 8: CI/CD & Deployment Pipeline (Days 6-7)
+
 **Goal:** Automated testing, building, publishing, and production deployment
 
 **What it does:**
+
 - **GitHub Actions Workflows:**
   - Test on every PR (all phases' tests)
   - Build artifacts (compiled code, bundles)
@@ -202,6 +233,7 @@ This document provides the **high-level roadmap** for completing the Discord Voi
   - Documentation complete
 
 **Key Files:**
+
 - `.github/workflows/test.yml` (CI)
 - `.github/workflows/build.yml` (build)
 - `.github/workflows/deploy.yml` (deployment)
@@ -210,6 +242,7 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 - `.env.example` (template)
 
 **Deployment Checklist:**
+
 - [ ] All tests passing in CI
 - [ ] Code coverage verified
 - [ ] Security headers configured
@@ -224,6 +257,7 @@ This document provides the **high-level roadmap** for completing the Discord Voi
 - [ ] Incident response plan documented
 
 **CI/CD Integration:**
+
 - Multi-workflow automated testing
 - Artifact versioning and tracking
 - Automated releases
@@ -245,26 +279,31 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 ### Critical Integration Requirements
 
 **Phase 3 → Phase 4:**
+
 - Audio buffer format standardized (Opus frames)
 - Size and timing specifications matched
 - Test harness validates conversion
 
 **Phase 4 → Phase 5:**
+
 - Text output format stable
 - Encoding clear (UTF-8)
 - Error codes documented
 
 **Phase 5 → Phase 6:**
+
 - Audio format compatible (Opus)
 - Playback API stable
 - Error handling unified
 
 **Phase 6 → Phase 7:**
+
 - Pipeline errors mapped to user messages
 - Command interface specified
 - Guild state schema defined
 
 **Phase 7 → Phase 8:**
+
 - Docker entrypoint finalized
 - Environment variables documented
 - Health check endpoints available
@@ -275,28 +314,31 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 
 ### Total Test Coverage: **180+ Tests**
 
-| Phase | Component | Tests | Coverage Target |
-|-------|-----------|-------|-----------------|
-| 3 | AudioStreamHandler | 48 | 90% |
-| 4 | SpeechToText | 32 | 85% |
-| 5 | TextToSpeech | 28 | 85% |
-| 6 | VoiceCommandPipeline | 36 | 85% |
-| 7 | Discord Integration | 40 | 80% |
-| **Total** | - | **184** | **85%** |
+| Phase     | Component            | Tests   | Coverage Target |
+| --------- | -------------------- | ------- | --------------- |
+| 3         | AudioStreamHandler   | 48      | 90%             |
+| 4         | SpeechToText         | 32      | 85%             |
+| 5         | TextToSpeech         | 28      | 85%             |
+| 6         | VoiceCommandPipeline | 36      | 85%             |
+| 7         | Discord Integration  | 40      | 80%             |
+| **Total** | -                    | **184** | **85%**         |
 
 ### Test Categories
 
 **Unit Tests** (110 tests)
+
 - Individual component testing
 - Mocked external dependencies
 - Error condition coverage
 
 **Integration Tests** (54 tests)
+
 - Phase-to-phase data flow
 - Real mock APIs
 - Error propagation
 
 **End-to-End Tests** (20 tests)
+
 - Full voice conversation cycle
 - Multi-guild scenarios
 - Failure recovery
@@ -306,12 +348,14 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 ## ⏱️ Timeline
 
 ### Implementation Phase (Phases 3-7)
+
 - **Duration:** 5-6 working days
 - **Effort:** ~40 hours total
 - **Parallelizable:** Yes (Phase 4-5 can overlap)
 - **Blockers:** None (Phase 2 complete)
 
 ### CI/CD & Deployment Phase (Phase 8)
+
 - **Duration:** 1-2 working days
 - **Effort:** ~16 hours total
 - **Setup Time:** ~4 hours (GitHub Actions, Discord bot)
@@ -319,6 +363,7 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 - **Documentation:** ~4 hours
 
 ### Total Project Timeline
+
 - **Start:** Immediate (Phase 2 verified)
 - **Phase 3-7 Complete:** ~1 week
 - **Phase 8 Complete:** ~7 days after Phase 7
@@ -329,6 +374,7 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 ## 📋 Success Criteria
 
 ### Functional Requirements
+
 - [ ] All 184 tests passing
 - [ ] Voice join/leave works reliably
 - [ ] Speech transcription accuracy >90%
@@ -339,6 +385,7 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 - [ ] Proper permission validation
 
 ### Code Quality
+
 - [ ] Code coverage >85%
 - [ ] TypeScript strict mode enabled
 - [ ] ESLint passes (0 errors)
@@ -347,6 +394,7 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 - [ ] Documentation complete
 
 ### Deployment Readiness
+
 - [ ] Docker image builds successfully
 - [ ] All GitHub Actions workflows green
 - [ ] Secrets properly managed
@@ -356,6 +404,7 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 - [ ] Incident response plan ready
 
 ### Production Metrics
+
 - [ ] Voice join success rate: >99%
 - [ ] Connection stability: 0 crashes in 24hr test
 - [ ] Memory usage: Stable (<300MB)
@@ -367,6 +416,7 @@ Phase 3          Phase 4          Phase 5          Phase 6          Phase 7     
 ## 🚀 Deployment Strategy
 
 ### Environment Structure
+
 ```
 Development → Staging → Production
     ↓            ↓           ↓
@@ -375,6 +425,7 @@ Development → Staging → Production
 ```
 
 ### Deployment Steps
+
 1. **GitHub Actions Tests:** All 184 tests pass
 2. **Build Artifacts:** Docker image created + tagged
 3. **Staging Deployment:** Deploy to test bot/guild
@@ -388,6 +439,7 @@ Development → Staging → Production
 ## 📝 Documentation Structure
 
 ### For Developers
+
 - **PHASES3-8_OVERVIEW.md** (this file) — High-level roadmap
 - **PHASE3_PLAN.md** — Detailed Phase 3 specification
 - **PHASE4_PLAN.md** — Detailed Phase 4 specification
@@ -399,6 +451,7 @@ Development → Staging → Production
 - **INTEGRATION_CHECKLIST.md** — Integration validation steps
 
 ### For Operations
+
 - **DEPLOYMENT.md** — Production deployment guide
 - **SECRETS.md** — Environment variable reference
 - **TROUBLESHOOTING.md** — Common issues and fixes
@@ -406,6 +459,7 @@ Development → Staging → Production
 - **ROLLBACK.md** — Emergency procedures
 
 ### For Users
+
 - **README.md** — Setup and basic usage
 - **VOICE_COMMANDS.md** — Command reference
 - **TROUBLESHOOTING_USER.md** — User-facing help
@@ -439,13 +493,13 @@ Development → Staging → Production
 
 ## 📊 Risk Assessment
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|-----------|
-| Audio quality issues | Medium | High | Comprehensive buffering + tests |
-| API quota exhaustion | Low | Medium | Rate limiting + monitoring |
-| Discord API changes | Low | Medium | Version pinning + monitoring |
-| Memory leaks | Low | High | Proper cleanup + long-term tests |
-| Concurrent connection issues | Medium | High | Load testing + graceful degradation |
+| Risk                         | Probability | Impact | Mitigation                          |
+| ---------------------------- | ----------- | ------ | ----------------------------------- |
+| Audio quality issues         | Medium      | High   | Comprehensive buffering + tests     |
+| API quota exhaustion         | Low         | Medium | Rate limiting + monitoring          |
+| Discord API changes          | Low         | Medium | Version pinning + monitoring        |
+| Memory leaks                 | Low         | High   | Proper cleanup + long-term tests    |
+| Concurrent connection issues | Medium      | High   | Load testing + graceful degradation |
 
 ---
 

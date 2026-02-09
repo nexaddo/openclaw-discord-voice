@@ -5,7 +5,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "build": "tsc",
+    "test": "vitest run --reporter=verbose",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "clean": "rm -rf dist coverage"
   },
   "keywords": [
     "openclaw",
@@ -20,5 +28,20 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/nexaddo/openclaw-discord-voice.git"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/ui": "^4.0.18",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^18.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "jest": "^30.2.0",
+    "prettier": "^3.8.1",
+    "ts-jest": "^29.4.6",
+    "vitest": "^4.0.18"
   }
 }

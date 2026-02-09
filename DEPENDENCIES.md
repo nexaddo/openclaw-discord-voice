@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-02-06 18:31 EST  
 **OpenClaw Version:** 2026.2.2-3  
-**Node.js:** v22.22.0  
+**Node.js:** v22.22.0
 
 ---
 
@@ -28,21 +28,25 @@
 ```
 
 **Pros:**
+
 - Official Discord.js codec
 - Prebuilt binaries for common platforms
 - Excellent performance
 - Well-maintained
 
 **Cons:**
+
 - Requires native compilation on some platforms
 - ~50MB footprint
 
 **Installation:**
+
 ```bash
 npm install @discordjs/opus@^0.10.0 --save
 ```
 
 **Verification:**
+
 ```javascript
 import OpusEncoder from '@discordjs/opus';
 const encoder = new OpusEncoder.Encoder(48000, 2, 2880);
@@ -64,11 +68,13 @@ console.log('✅ Opus encoder ready');
 ```
 
 **When to use:**
+
 - Development/testing without build tools
 - Platforms where native compilation fails
 - Temporary workaround
 
 **Installation:**
+
 ```bash
 npm install opusscript@^0.0.8
 ```
@@ -91,11 +97,13 @@ console.log(ciphers.includes('aes-256-gcm')); // true ✅
 ```
 
 **Pros:**
+
 - No additional dependencies
 - Fast
 - Well-tested
 
 **Cons:**
+
 - Limited to what Node.js provides
 - No fallback on older Node.js versions
 
@@ -114,16 +122,19 @@ console.log(ciphers.includes('aes-256-gcm')); // true ✅
 ```
 
 **When to use:**
+
 - Hardware acceleration desired
 - Fallback for Node.js versions < 18
 - Extra crypto primitives needed
 
 **Installation:**
+
 ```bash
 npm install sodium-native@^5.0.10 --save-optional
 ```
 
 **macOS Requirements:**
+
 ```bash
 # If compilation fails
 brew install libsodium
@@ -145,11 +156,13 @@ brew install libsodium
 ```
 
 **When to use:**
+
 - Pure JavaScript fallback
 - Cross-platform guarantee
 - No native compilation needed
 
 **Installation:**
+
 ```bash
 npm install libsodium-wrappers@^0.8.2 --save-optional
 ```
@@ -170,6 +183,7 @@ npm install libsodium-wrappers@^0.8.2 --save-optional
 ```
 
 **Used for:**
+
 - PCM ↔ Opus conversion
 - Format detection
 - Streaming support
@@ -191,10 +205,12 @@ npm install libsodium-wrappers@^0.8.2 --save-optional
 ```
 
 **When to use:**
+
 - Need to support MP3, WAV, FLAC input
 - Phase 5+ (TTS integration)
 
 **Installation (deferred to Phase 5):**
+
 ```bash
 npm install ffmpeg-static@^5.2.0 --save-optional
 ```
@@ -204,6 +220,7 @@ npm install ffmpeg-static@^5.2.0 --save-optional
 ## Complete Installation Manifest
 
 ### Required Dependencies
+
 ```json
 {
   "@discordjs/opus": "^0.10.0",
@@ -212,6 +229,7 @@ npm install ffmpeg-static@^5.2.0 --save-optional
 ```
 
 ### Optional Dependencies (Recommended)
+
 ```json
 {
   "sodium-native": "^5.0.10",
@@ -220,6 +238,7 @@ npm install ffmpeg-static@^5.2.0 --save-optional
 ```
 
 ### Already Provided by OpenClaw
+
 ```json
 {
   "discord-api-types": "^0.38.38",
@@ -234,13 +253,15 @@ npm install ffmpeg-static@^5.2.0 --save-optional
 ## Version Compatibility Matrix
 
 ### OpenClaw Compatibility
+
 | OpenClaw | Node.js | @discordjs/voice | @discordjs/opus |
-|----------|---------|------------------|-----------------|
-| 2026.2.2 | 22.22.0 | 0.19.0 ✅ | ^0.10.0 ✅ |
-| 2025.x.x | 22.x.x | 0.19.0 ✅ | ^0.10.0 ✅ |
-| 2024.x.x | 20.x.x | 0.19.0 ✅ | ^0.10.0 ✅ |
+| -------- | ------- | ---------------- | --------------- |
+| 2026.2.2 | 22.22.0 | 0.19.0 ✅        | ^0.10.0 ✅      |
+| 2025.x.x | 22.x.x  | 0.19.0 ✅        | ^0.10.0 ✅      |
+| 2024.x.x | 20.x.x  | 0.19.0 ✅        | ^0.10.0 ✅      |
 
 ### Dependency Chain
+
 ```
 @discordjs/voice@0.19.0
 ├── discord-api-types@^0.38.16 ✅ (0.38.38 available)
@@ -266,6 +287,7 @@ libsodium-wrappers@^0.8.2
 ## Installation Steps
 
 ### Step 1: Update Main Package
+
 Edit `/usr/local/lib/node_modules/openclaw/package.json`:
 
 ```json
@@ -282,12 +304,14 @@ Edit `/usr/local/lib/node_modules/openclaw/package.json`:
 ```
 
 ### Step 2: Install
+
 ```bash
 cd /usr/local/lib/node_modules/openclaw/
 npm install
 ```
 
 ### Step 3: Verify
+
 ```bash
 # List all voice-related packages
 npm list | grep -E "discord|opus|voice|prism|sodium"
@@ -299,6 +323,7 @@ npm list | grep -E "discord|opus|voice|prism|sodium"
 ```
 
 ### Step 4: Test Loading
+
 ```bash
 node -e "import('@discordjs/opus').then(() => console.log('✅ opus')).catch(e => console.error('❌', e.message))"
 node -e "import('@discordjs/voice').then(() => console.log('✅ voice')).catch(e => console.error('❌', e.message))"
@@ -306,6 +331,7 @@ node -e "import('prism-media').then(() => console.log('✅ prism')).catch(e => c
 ```
 
 ### Step 5: Test Opus Encoding
+
 ```bash
 node --input-type=module << 'EOF'
 import OpusEncoder from '@discordjs/opus';
@@ -321,8 +347,10 @@ EOF
 ## Troubleshooting
 
 ### Issue: npm install fails with "gyp ERR!"
+
 **Cause:** Native module compilation failed  
 **Solution:**
+
 ```bash
 # macOS
 xcode-select --install
@@ -341,8 +369,10 @@ npm install
 ---
 
 ### Issue: "Cannot find module '@discordjs/opus'"
+
 **Cause:** Installation didn't complete  
 **Solution:**
+
 ```bash
 # Clean and reinstall
 cd /usr/local/lib/node_modules/openclaw/
@@ -354,8 +384,10 @@ npm install
 ---
 
 ### Issue: "libsodium.so.23 not found" (Linux)
+
 **Cause:** System libsodium library missing  
 **Solution:**
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install libsodium23 libsodium-dev
@@ -370,14 +402,16 @@ brew install libsodium
 ---
 
 ### Issue: Opus encoding produces silence
+
 **Cause:** Sample rate/channel mismatch  
 **Solution:**
+
 ```typescript
 // Must be exactly:
 const encoder = new OpusEncoder.Encoder(
-  48000,  // Sample rate: exactly 48 kHz
-  2,      // Channels: exactly 2 (stereo)
-  2880    // Frame size: 20ms at 48kHz
+  48000, // Sample rate: exactly 48 kHz
+  2, // Channels: exactly 2 (stereo)
+  2880, // Frame size: 20ms at 48kHz
 );
 ```
 
@@ -386,6 +420,7 @@ const encoder = new OpusEncoder.Encoder(
 ## Performance Characteristics
 
 ### Opus Encoding Speed
+
 ```
 @discordjs/opus: ~2500 frames/sec ✅
 opusscript: ~250 frames/sec (10x slower)
@@ -397,6 +432,7 @@ For 48kHz audio:
 ```
 
 ### Memory Usage
+
 ```
 @discordjs/opus: ~2-5 MB per encoder instance
 libsodium-wrappers: ~1 MB
@@ -408,11 +444,13 @@ sodium-native: ~500 KB
 ## Security Considerations
 
 ### Encryption Library Preference
+
 1. **Node.js native crypto** (18+) - Recommended
 2. **sodium-native** - If extra security primitives needed
 3. **libsodium-wrappers** - Last resort (slower)
 
 ### Key Management
+
 ```typescript
 // Discord voice uses:
 // - 256-bit shared secret (from voice session handshake)
@@ -443,6 +481,7 @@ const nonceLength = 24; // 192 bits for XChaCha20
 ## Migration Path
 
 ### From opusscript (if currently used)
+
 ```bash
 # Remove slow codec
 npm uninstall opusscript
@@ -454,6 +493,7 @@ npm install @discordjs/opus@^0.10.0 --save
 ```
 
 ### From older Discord.js voice
+
 ```bash
 # Old package
 npm uninstall discord.js-voice

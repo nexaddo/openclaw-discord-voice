@@ -1,17 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  AudioStreamHandler,
-  CircularAudioBuffer,
-  JitterBuffer,
-  AudioErrorCode,
-} from '../src/AudioStreamHandler';
-import {
-  AudioStreamConfig,
-  AudioFrame,
-  AudioStreamError,
-  BufferHealth,
-  AudioStreamStats,
-} from '../src/types';
+import { AudioStreamHandler, CircularAudioBuffer, JitterBuffer, AudioErrorCode } from '../src/AudioStreamHandler';
+import { AudioStreamConfig, AudioFrame, AudioStreamError, BufferHealth, AudioStreamStats } from '../src/types';
 
 // ============================================
 // Test Data Generators
@@ -57,7 +46,7 @@ function createTestOpusData(size = 40): Uint8Array {
   // Create mock Opus packet
   const data = new Uint8Array(size);
   // Add magic byte
-  data[0] = 0xFF; // Opus magic marker
+  data[0] = 0xff; // Opus magic marker
   return data;
 }
 
@@ -174,9 +163,7 @@ describe('AudioStreamHandler - Section B: Audio Capture', () => {
   // TC-008
   it('TC-008: captureFrame() rejects invalid buffer size', async () => {
     const invalidData = new Float32Array(100); // Wrong size
-    await expect(handler.captureFrame(invalidData)).rejects.toThrow(
-      'Invalid frame size'
-    );
+    await expect(handler.captureFrame(invalidData)).rejects.toThrow('Invalid frame size');
   });
 
   // TC-009
@@ -268,11 +255,7 @@ describe('AudioStreamHandler - Section C: Opus Encoding', () => {
 
   // TC-017
   it('TC-017: encodeFrameBatch() encodes multiple frames', async () => {
-    const frames = [
-      createTestPCMData(960),
-      createTestPCMData(960),
-      createTestPCMData(960),
-    ];
+    const frames = [createTestPCMData(960), createTestPCMData(960), createTestPCMData(960)];
     const encoded = await handler.encodeFrameBatch(frames);
     expect(encoded).toHaveLength(3);
     expect(encoded.every((e) => e instanceof Uint8Array)).toBe(true);
@@ -280,11 +263,7 @@ describe('AudioStreamHandler - Section C: Opus Encoding', () => {
 
   // TC-018
   it('TC-018: encodeFrameBatch() maintains frame order', async () => {
-    const frames = [
-      createTestPCMData(960),
-      createTestPCMData(960),
-      createTestPCMData(960),
-    ];
+    const frames = [createTestPCMData(960), createTestPCMData(960), createTestPCMData(960)];
     const encoded = await handler.encodeFrameBatch(frames);
     // All frames should be encoded
     expect(encoded.length).toBe(frames.length);
@@ -380,11 +359,7 @@ describe('AudioStreamHandler - Section D: Opus Decoding', () => {
 
   // TC-024
   it('TC-024: decodeBatch() decodes multiple frames', async () => {
-    const frames = [
-      createTestOpusData(40),
-      createTestOpusData(40),
-      createTestOpusData(40),
-    ];
+    const frames = [createTestOpusData(40), createTestOpusData(40), createTestOpusData(40)];
     const decoded = await handler.decodeFrameBatch(frames);
     expect(decoded).toHaveLength(3);
     expect(decoded.every((d) => d instanceof Float32Array)).toBe(true);
@@ -392,11 +367,7 @@ describe('AudioStreamHandler - Section D: Opus Decoding', () => {
 
   // TC-025
   it('TC-025: decodeBatch() maintains timestamp order', async () => {
-    const frames = [
-      createTestOpusData(40),
-      createTestOpusData(40),
-      createTestOpusData(40),
-    ];
+    const frames = [createTestOpusData(40), createTestOpusData(40), createTestOpusData(40)];
     const decoded = await handler.decodeFrameBatch(frames);
     expect(decoded.length).toBe(frames.length);
   });

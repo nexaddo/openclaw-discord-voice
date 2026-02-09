@@ -12,31 +12,34 @@
 Phase 6 implementation **CANNOT START** due to missing Phase 4 and Phase 5 implementations.
 
 Per explicit instructions:
+
 > **IMPORTANT:** Wait for Phase 4 + Phase 5 to be merged before starting integration.
 
 ---
 
 ## Current Repository Status
 
-| Phase | Component | Status | Merged | Tests |
-|-------|-----------|--------|--------|-------|
-| 1 | Dependencies & Foundation | ✅ Complete | ✅ main | - |
-| 2 | Voice Connection Manager | ✅ Complete | ✅ main | 40 |
-| 3 | Audio Stream Handler | ✅ Complete | ✅ main | 48 |
-| **4** | **Speech-to-Text (STT)** | ❌ **NOT STARTED** | ❌ | - |
-| **5** | **Text-to-Speech (TTS)** | ❌ **NOT STARTED** | ❌ | - |
-| 6 | Voice Command Pipeline | ⏳ WAITING | - | 25+ (pending) |
-| 7 | Discord Commands | ⏳ WAITING | - | 40 (pending) |
-| 8 | CI/CD & Deployment | 🔄 In Progress | Partial | - |
+| Phase | Component                 | Status             | Merged  | Tests         |
+| ----- | ------------------------- | ------------------ | ------- | ------------- |
+| 1     | Dependencies & Foundation | ✅ Complete        | ✅ main | -             |
+| 2     | Voice Connection Manager  | ✅ Complete        | ✅ main | 40            |
+| 3     | Audio Stream Handler      | ✅ Complete        | ✅ main | 48            |
+| **4** | **Speech-to-Text (STT)**  | ❌ **NOT STARTED** | ❌      | -             |
+| **5** | **Text-to-Speech (TTS)**  | ❌ **NOT STARTED** | ❌      | -             |
+| 6     | Voice Command Pipeline    | ⏳ WAITING         | -       | 25+ (pending) |
+| 7     | Discord Commands          | ⏳ WAITING         | -       | 40 (pending)  |
+| 8     | CI/CD & Deployment        | 🔄 In Progress     | Partial | -             |
 
 ---
 
 ## What's Missing
 
 ### Phase 4: Speech-to-Text (STT)
+
 **Purpose:** Convert audio frames → text transcriptions
 
 **Requirements:**
+
 - 32 test cases (TDD first)
 - `SpeechToText` class with `transcribe(audioBuffer: Buffer[]): Promise<string>`
 - Voice Activity Detection (VAD) for silence detection
@@ -44,6 +47,7 @@ Per explicit instructions:
 - Language detection
 
 **Constraints:**
+
 - ⚠️ **CRITICAL:** Must use local models ONLY
   - ❌ NO Whisper API (cloud)
   - ❌ NO cloud-based STT
@@ -55,9 +59,11 @@ Per explicit instructions:
 ---
 
 ### Phase 5: Text-to-Speech (TTS)
+
 **Purpose:** Convert text strings → audio playback
 
 **Requirements:**
+
 - 28 test cases (TDD first)
 - `TextToSpeech` class with `synthesize(text: string, voice: string): Promise<Buffer>`
 - Audio format conversion (various formats → Opus for Discord)
@@ -65,6 +71,7 @@ Per explicit instructions:
 - Voice personality options
 
 **Constraints:**
+
 - ⚠️ **CRITICAL:** Must use local models ONLY
   - ❌ NO ElevenLabs API (cloud)
   - ❌ NO cloud-based TTS
@@ -78,17 +85,20 @@ Per explicit instructions:
 ## Phase 6 Readiness Checklist
 
 ### ✅ Pre-Phase-6 Requirements (Ready)
+
 - [x] Phase 3 (AudioStreamHandler) complete & tested
 - [x] VoiceConnectionManager complete
 - [x] Type definitions established
 - [x] Discord.js integration framework ready
 
 ### ❌ Blocking Requirements (NOT Ready)
+
 - [ ] Phase 4 (SpeechToText) implemented & merged
 - [ ] Phase 5 (TextToSpeech) implemented & merged
 - [ ] Both phases tested with 32+ tests passing each
 
 ### What Phase 6 Will Do (Once Unblocked)
+
 1. Create `src/VoiceCommandPipeline.ts`
 2. Implement 25+ test cases for pipeline orchestration
 3. Wire up: STT → Intent Parser → Rue Agent → TTS
@@ -135,6 +145,7 @@ Per explicit instructions:
 ## Dependency Details
 
 ### Phase 4 Roadmap
+
 **Scheduled:** Wednesday, Feb 12 (8 hours)
 
 1. **Morning (4 hours):**
@@ -152,6 +163,7 @@ Per explicit instructions:
 3. **PR:** `feature/phase4-stt` → main
 
 ### Phase 5 Roadmap
+
 **Scheduled:** Thursday, Feb 13 (8 hours)
 
 1. **Morning (4 hours):**
@@ -171,9 +183,11 @@ Per explicit instructions:
 ---
 
 ## Phase 6 Will Then Be Ready
+
 **Scheduled:** Friday, Feb 14 (8 hours)
 
 Once Phase 4 & 5 are merged to main, Phase 6 can proceed with:
+
 - 25+ test cases (TDD first)
 - VoiceCommandPipeline orchestration class
 - End-to-end integration: Audio → STT → Intent → Agent → TTS → Audio
@@ -185,11 +199,13 @@ Once Phase 4 & 5 are merged to main, Phase 6 can proceed with:
 ## Model Constraint Note ⚠️
 
 The IMPLEMENTATION_ROADMAP references cloud APIs (Whisper, ElevenLabs) but Phase 6 explicitly requires:
+
 > **Model constraint:** Use ONLY local models (Phi-3 Mini, Gemma3, Qwen2.5, TinyLlama). NO cloud APIs.
 
 **Implication:** Phase 4 and Phase 5 implementations must use LOCAL models, not cloud APIs.
 
 **Recommended Tech Stack:**
+
 - **Phase 4 (STT):** Faster-Whisper (local) or Vosk
 - **Phase 5 (TTS):** Coqui TTS, Piper TTS, or local TTS Engine
 - **Intent Parser:** Phi-3 Mini, Gemma3, Qwen2.5, or TinyLlama
@@ -199,6 +215,7 @@ The IMPLEMENTATION_ROADMAP references cloud APIs (Whisper, ElevenLabs) but Phase
 ## Action Items
 
 ### For Conductor (Main Session)
+
 - [ ] Review this blocker report
 - [ ] Spawn Phase 4 implementation agent
 - [ ] Spawn Phase 5 implementation agent
@@ -206,16 +223,19 @@ The IMPLEMENTATION_ROADMAP references cloud APIs (Whisper, ElevenLabs) but Phase
 - [ ] Schedule Phase 4 & 5 execution
 
 ### For Phase 4 Agent (When Spawned)
+
 - [ ] Implement Speech-to-Text with 32 test cases
 - [ ] Use local STT model (NOT Whisper API)
 - [ ] Merge to main when complete
 
 ### For Phase 5 Agent (When Spawned)
+
 - [ ] Implement Text-to-Speech with 28 test cases
 - [ ] Use local TTS model (NOT ElevenLabs API)
 - [ ] Merge to main when complete
 
 ### For Phase 6 Agent (When Unblocked)
+
 - [ ] Wait for Phase 4 & 5 to be merged
 - [ ] Implement VoiceCommandPipeline with 25+ test cases
 - [ ] Integration tests across all phases

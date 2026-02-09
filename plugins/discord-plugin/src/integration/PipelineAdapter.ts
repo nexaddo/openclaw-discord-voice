@@ -12,13 +12,14 @@ import { IPipelineAdapter, DiscordPluginConfig } from '../types.js';
  */
 export class PipelineAdapter implements IPipelineAdapter {
   private config: DiscordPluginConfig;
-  private pipeline: any;  // Will be VoiceCommandPipeline type after Phase 6
+
+  private pipeline: any; // Will be VoiceCommandPipeline type after Phase 6
 
   constructor(pipeline: any, config: DiscordPluginConfig = {}) {
     this.pipeline = pipeline;
     this.config = {
       debug: false,
-      ...config
+      ...config,
     };
   }
 

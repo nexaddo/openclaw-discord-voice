@@ -10,9 +10,9 @@
  * Voice mode states
  */
 export enum VoiceMode {
-  Off = 'off',              // Not connected
-  Listening = 'listening',  // Continuous listening mode
-  Active = 'active'         // Processing voice commands
+  Off = 'off', // Not connected
+  Listening = 'listening', // Continuous listening mode
+  Active = 'active', // Processing voice commands
 }
 
 /**
@@ -21,7 +21,7 @@ export enum VoiceMode {
 export enum PipelineStatus {
   Ready = 'ready',
   Processing = 'processing',
-  Error = 'error'
+  Error = 'error',
 }
 
 /**
@@ -29,13 +29,13 @@ export enum PipelineStatus {
  */
 export interface GuildVoiceState {
   guildId: string;
-  channelId: string | null;        // Current voice channel (null = not connected)
+  channelId: string | null; // Current voice channel (null = not connected)
   voiceMode: VoiceMode;
-  connectedAt: number | null;      // When bot joined voice
-  activeUsers: Set<string>;        // User IDs in voice channel
-  lastActivity: number;            // Last user activity timestamp
+  connectedAt: number | null; // When bot joined voice
+  activeUsers: Set<string>; // User IDs in voice channel
+  lastActivity: number; // Last user activity timestamp
   pipelineStatus: PipelineStatus;
-  errorCount: number;              // For monitoring
+  errorCount: number; // For monitoring
   lastError?: string;
 }
 
@@ -47,7 +47,7 @@ export interface StoredGuildVoiceState {
   channelId: string | null;
   voiceMode: VoiceMode;
   connectedAt: number | null;
-  activeUsers: string[];  // Serializable version of Set
+  activeUsers: string[]; // Serializable version of Set
   lastActivity: number;
   pipelineStatus: PipelineStatus;
   errorCount: number;
@@ -93,22 +93,22 @@ export interface VoiceStopPayload {
  * Voice state update from Discord
  */
 export interface VoiceStateUpdateEvent {
-  oldState: any;  // VoiceState from discord.js
-  newState: any;  // VoiceState from discord.js
+  oldState: any; // VoiceState from discord.js
+  newState: any; // VoiceState from discord.js
 }
 
 /**
  * Channel delete event
  */
 export interface ChannelDeleteEvent {
-  channel: any;  // Channel from discord.js
+  channel: any; // Channel from discord.js
 }
 
 /**
  * Guild delete event
  */
 export interface GuildDeleteEvent {
-  guild: any;  // Guild from discord.js
+  guild: any; // Guild from discord.js
 }
 
 // ============================================
@@ -143,11 +143,11 @@ export interface InteractionResponse {
  * Discord plugin configuration
  */
 export interface DiscordPluginConfig {
-  stateFile?: string;              // Where to persist state
-  debug?: boolean;                 // Enable debug logging
-  enableStateCleanup?: boolean;    // Auto-cleanup old state
-  stateTTL?: number;               // How long to keep state (ms)
-  maxErrorCount?: number;          // Before blocking guild
+  stateFile?: string; // Where to persist state
+  debug?: boolean; // Enable debug logging
+  enableStateCleanup?: boolean; // Auto-cleanup old state
+  stateTTL?: number; // How long to keep state (ms)
+  maxErrorCount?: number; // Before blocking guild
 }
 
 // ============================================
@@ -167,7 +167,7 @@ export enum DiscordPluginErrorType {
   PipelineError = 'PIPELINE_ERROR',
   StateError = 'STATE_ERROR',
   DiscordError = 'DISCORD_ERROR',
-  Timeout = 'TIMEOUT'
+  Timeout = 'TIMEOUT',
 }
 
 /**
@@ -175,9 +175,13 @@ export enum DiscordPluginErrorType {
  */
 export class DiscordPluginError extends Error {
   type: DiscordPluginErrorType;
+
   guildId?: string;
+
   userId?: string;
+
   originalError?: Error;
+
   timestamp: number;
 
   constructor(
@@ -187,7 +191,7 @@ export class DiscordPluginError extends Error {
       guildId?: string;
       userId?: string;
       originalError?: Error;
-    }
+    },
   ) {
     super(message);
     this.name = 'DiscordPluginError';
@@ -251,7 +255,7 @@ export enum LogLevel {
   Debug = 'DEBUG',
   Info = 'INFO',
   Warn = 'WARN',
-  Error = 'ERROR'
+  Error = 'ERROR',
 }
 
 /**

@@ -9,7 +9,7 @@ import {
   GuildDeleteEvent,
   VoiceMode,
   IEventHandler,
-  DiscordPluginConfig
+  DiscordPluginConfig,
 } from '../types.js';
 import { GuildStateManager } from '../state/GuildStateManager.js';
 
@@ -18,13 +18,14 @@ import { GuildStateManager } from '../state/GuildStateManager.js';
  */
 export class EventHandler implements IEventHandler {
   private stateManager: GuildStateManager;
+
   private config: DiscordPluginConfig;
 
   constructor(stateManager: GuildStateManager, config: DiscordPluginConfig = {}) {
     this.stateManager = stateManager;
     this.config = {
       debug: false,
-      ...config
+      ...config,
     };
   }
 

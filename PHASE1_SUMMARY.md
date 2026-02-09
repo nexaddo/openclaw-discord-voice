@@ -10,6 +10,7 @@
 ## Key Findings
 
 ### Current State
+
 - ✅ `@discordjs/voice@0.19.0` already in OpenClaw
 - ✅ `prism-media@1.3.5` already available
 - ❌ **No opus codec** installed (needed for audio)
@@ -17,12 +18,12 @@
 
 ### Required Dependencies
 
-| Package | Version | Purpose | Type | Status |
-|---------|---------|---------|------|--------|
-| `@discordjs/voice` | 0.19.0 | Voice connections | Already installed | ✅ |
-| `@discordjs/opus` | 0.10.0 | Audio codec | Native addon | 🔲 Install |
-| `libsodium-wrappers` | 0.8.2 | Encryption | Pure JS | 🔲 Install |
-| `prism-media` | 1.3.5 | Audio format conversion | Already installed | ✅ |
+| Package              | Version | Purpose                 | Type              | Status     |
+| -------------------- | ------- | ----------------------- | ----------------- | ---------- |
+| `@discordjs/voice`   | 0.19.0  | Voice connections       | Already installed | ✅         |
+| `@discordjs/opus`    | 0.10.0  | Audio codec             | Native addon      | 🔲 Install |
+| `libsodium-wrappers` | 0.8.2   | Encryption              | Pure JS           | 🔲 Install |
+| `prism-media`        | 1.3.5   | Audio format conversion | Already installed | ✅         |
 
 ---
 
@@ -42,6 +43,7 @@
 ```
 
 **Command:**
+
 ```bash
 cd plugins/voice-extension
 npm install
@@ -71,6 +73,7 @@ npm install
 ## Success Criteria
 
 Phase 1 is complete when:
+
 - [ ] Plugin directory structure created
 - [ ] Dependencies installed without errors
 - [ ] Opus encoder/decoder functions work
@@ -98,6 +101,7 @@ Phase 1 is complete when:
 Once Phase 1 dependencies are installed, Phase 2 can proceed:
 
 **Phase 2: Voice Connection Manager**
+
 - Implement `VoiceConnectionManager` class
 - Handle Discord voice channel joins/leaves
 - Test basic connection state tracking
@@ -107,6 +111,7 @@ Once Phase 1 dependencies are installed, Phase 2 can proceed:
 ## Full Report
 
 For detailed analysis:
+
 ```
 📄 PHASE1_RESEARCH_REPORT.md
    ├── Current State (detailed inventory)
@@ -126,9 +131,9 @@ For detailed analysis:
 **No immediate decisions required** - recommended approach provided.
 
 ### Optional Decisions:
+
 1. Use fallback `opusscript` instead of `@discordjs/opus`?
    - Current recommendation: Try native first
-   
 2. Use `sodium-native` instead of `libsodium-wrappers`?
    - Current recommendation: Use pure JS for simplicity
 

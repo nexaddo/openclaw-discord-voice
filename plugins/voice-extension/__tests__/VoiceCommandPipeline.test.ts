@@ -94,8 +94,9 @@ describe('VoiceCommandPipeline - 36 Comprehensive Test Cases', () => {
       const frames = [createMockAudioFrame(960, 0)];
 
       // startSession should throw before initialization
-      await expect(uninitializedPipeline.startSession('user123', 'guild456', 'channel789'))
-        .rejects.toThrow(PipelineError);
+      await expect(uninitializedPipeline.startSession('user123', 'guild456', 'channel789')).rejects.toThrow(
+        PipelineError,
+      );
 
       await uninitializedPipeline.shutdown();
     });
@@ -189,8 +190,7 @@ describe('VoiceCommandPipeline - 36 Comprehensive Test Cases', () => {
       await limitedPipeline.startSession('user2', 'guild1', 'channel2');
 
       // Third session should fail
-      await expect(limitedPipeline.startSession('user3', 'guild1', 'channel3'))
-        .rejects.toThrow(PipelineError);
+      await expect(limitedPipeline.startSession('user3', 'guild1', 'channel3')).rejects.toThrow(PipelineError);
 
       await limitedPipeline.shutdown();
     });
@@ -292,88 +292,60 @@ describe('VoiceCommandPipeline - 36 Comprehensive Test Cases', () => {
   describe('Error Handling', () => {
     it('TC-020: Invalid session ID throws error', async () => {
       const frames = [createMockAudioFrame(960, 0)];
-      await expect(pipeline.processVoiceCommand('invalid-session', frames))
-        .rejects.toThrow(PipelineError);
+      await expect(pipeline.processVoiceCommand('invalid-session', frames)).rejects.toThrow(PipelineError);
     });
 
     it('TC-021: Error code classification', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.STT_TRANSCRIPTION_FAILED,
-        'Test error'
-      );
+      const error = new PipelineError(PipelineErrorCode.STT_TRANSCRIPTION_FAILED, 'Test error');
       expect(error.getPhase()).toBe('stt');
     });
 
     it('TC-022: Audio phase error classification', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.AUDIO_BUFFER_OVERFLOW,
-        'Buffer overflow'
-      );
+      const error = new PipelineError(PipelineErrorCode.AUDIO_BUFFER_OVERFLOW, 'Buffer overflow');
       expect(error.getPhase()).toBe('audio');
     });
 
     it('TC-023: TTS phase error classification', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.TTS_SYNTHESIS_FAILED,
-        'Synthesis error'
-      );
+      const error = new PipelineError(PipelineErrorCode.TTS_SYNTHESIS_FAILED, 'Synthesis error');
       expect(error.getPhase()).toBe('tts');
     });
 
     it('TC-024: Agent phase error classification', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.AGENT_REQUEST_FAILED,
-        'Agent error'
-      );
+      const error = new PipelineError(PipelineErrorCode.AGENT_REQUEST_FAILED, 'Agent error');
       expect(error.getPhase()).toBe('agent');
     });
 
     it('TC-025: User-facing error messages', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.AUDIO_CAPTURE_FAILED,
-        'Microphone not working'
-      );
+      const error = new PipelineError(PipelineErrorCode.AUDIO_CAPTURE_FAILED, 'Microphone not working');
       expect(error.userMessage).toBeDefined();
       expect(error.userMessage.length > 0).toBe(true);
     });
 
     it('TC-026: Error recovery suggestions', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.STT_NO_SPEECH_DETECTED,
-        'No speech'
-      );
+      const error = new PipelineError(PipelineErrorCode.STT_NO_SPEECH_DETECTED, 'No speech');
       expect(error.recoverySuggestions).toBeDefined();
       expect(error.recoverySuggestions.length > 0).toBe(true);
     });
 
     it('TC-027: Error context preservation', async () => {
-      const error = new PipelineError(
-        PipelineErrorCode.PIPELINE_TIMEOUT,
-        'Timeout',
-        {
-          sessionId: 'test-session',
-          userId: 'test-user',
-          phase: 'audio'
-        }
-      );
+      const error = new PipelineError(PipelineErrorCode.PIPELINE_TIMEOUT, 'Timeout', {
+        sessionId: 'test-session',
+        userId: 'test-user',
+        phase: 'audio',
+      });
       expect(error.context.sessionId).toBe('test-session');
       expect(error.context.userId).toBe('test-user');
     });
 
     it('TC-028: Recoverable flag set correctly', async () => {
-      const recoverableError = new PipelineError(
-        PipelineErrorCode.STT_API_ERROR,
-        'API error',
-        {},
-        true
-      );
+      const recoverableError = new PipelineError(PipelineErrorCode.STT_API_ERROR, 'API error', {}, true);
       expect(recoverableError.recoverable).toBe(true);
 
       const nonRecoverableError = new PipelineError(
         PipelineErrorCode.PIPELINE_INVALID_STATE,
         'Invalid state',
         {},
-        false
+        false,
       );
       expect(nonRecoverableError.recoverable).toBe(false);
     });

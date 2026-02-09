@@ -11,7 +11,7 @@ import {
   VoiceConnectionInfo,
   VoiceErrorType,
   VoiceConnectionError,
-  VoiceConnectionManagerOptions
+  VoiceConnectionManagerOptions,
 } from './types.js';
 
 // Type placeholder for VoiceConnection (from @discordjs/voice)
@@ -19,14 +19,14 @@ type VoiceConnection = any;
 
 /**
  * Manages voice connections for Discord guilds
- * 
+ *
  * This class handles:
  * - Joining voice channels
  * - Leaving voice channels
  * - Tracking connection state
  * - Managing reconnections
  * - Error handling and recovery
- * 
+ *
  * Usage:
  * ```typescript
  * const manager = new VoiceConnectionManager(botClient, options);
@@ -93,7 +93,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Creates a new VoiceConnectionManager
-   * 
+   *
    * @param botClient - Discord.js bot client
    * @param options - Configuration options
    * @throws {VoiceConnectionError} If botClient is invalid
@@ -107,7 +107,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
     this.botClient = botClient;
     this.options = this.normalizeOptions(options);
-    this.logger = this.options.debug 
+    this.logger = this.options.debug
       ? (msg: string, data?: any) => console.log(`[VoiceConnectionManager] ${msg}`, data || '')
       : () => {};
 
@@ -120,12 +120,12 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Joins a voice channel and establishes connection
-   * 
+   *
    * @param guildId - ID of the guild
    * @param channelId - ID of the voice channel
    * @param config - Optional connection configuration
    * @returns Promise<VoiceConnection> - Active connection
-   * 
+   *
    * @throws {VoiceConnectionError}
    * - INVALID_GUILD: Guild not found
    * - INVALID_CHANNEL: Channel not found
@@ -138,7 +138,7 @@ export class VoiceConnectionManager extends EventEmitter {
   async connect(
     guildId: string,
     channelId: string,
-    config?: Partial<JoinVoiceChannelConfig>
+    config?: Partial<JoinVoiceChannelConfig>,
   ): Promise<VoiceConnection> {
     this.logger('connect() called', { guildId, channelId, config });
 
@@ -148,7 +148,7 @@ export class VoiceConnectionManager extends EventEmitter {
         const error = new VoiceConnectionError(
           VoiceErrorType.ALREADY_CONNECTED,
           `Already connected to a voice channel in guild ${guildId}`,
-          { guildId, channelId }
+          { guildId, channelId },
         );
         this.tryEmitError(guildId, error);
         throw error;
@@ -158,11 +158,11 @@ export class VoiceConnectionManager extends EventEmitter {
       this.validateGuildAndChannel(guildId, channelId);
 
       // Check permissions
-      if (!await this.checkPermissions(guildId, channelId)) {
+      if (!(await this.checkPermissions(guildId, channelId))) {
         const error = new VoiceConnectionError(
           VoiceErrorType.NO_PERMISSION,
           `Bot lacks permission to connect to voice channel ${channelId} in guild ${guildId}`,
-          { guildId, channelId }
+          { guildId, channelId },
         );
         this.tryEmitError(guildId, error);
         throw error;
@@ -173,7 +173,7 @@ export class VoiceConnectionManager extends EventEmitter {
         const error = new VoiceConnectionError(
           VoiceErrorType.INVALID_STATE,
           'Manager was destroyed during connection setup',
-          { guildId, channelId }
+          { guildId, channelId },
         );
         this.tryEmitError(guildId, error);
         throw error;
@@ -188,11 +188,11 @@ export class VoiceConnectionManager extends EventEmitter {
         state: {
           status: ConnectionStateType.Signalling,
           timestamp: now,
-          reason: 'Starting connection'
+          reason: 'Starting connection',
         },
         createdAt: now,
         lastStatusChange: now,
-        rejoinAttempts: 0
+        rejoinAttempts: 0,
       };
       this.connectionInfo.set(guildId, info);
 
@@ -215,7 +215,7 @@ export class VoiceConnectionManager extends EventEmitter {
       return await this.waitForConnection(guildId, connection);
     } catch (error: any) {
       this.logger('connect() error', { guildId, error: error.message });
-      
+
       // Clean up on error
       this.cleanupConnection(guildId);
 
@@ -227,7 +227,7 @@ export class VoiceConnectionManager extends EventEmitter {
       const wrappedError = new VoiceConnectionError(
         VoiceErrorType.DISCORD_API_ERROR,
         `Failed to connect to voice channel: ${error.message}`,
-        { guildId, channelId, originalError: error }
+        { guildId, channelId, originalError: error },
       );
       this.emit('error', guildId, wrappedError);
       throw wrappedError;
@@ -236,10 +236,10 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Disconnects from a voice channel
-   * 
+   *
    * @param guildId - ID of the guild to disconnect from
    * @returns Promise<void>
-   * 
+   *
    * @throws {VoiceConnectionError}
    * - INVALID_GUILD: No connection for this guild
    */
@@ -247,11 +247,9 @@ export class VoiceConnectionManager extends EventEmitter {
     this.logger('disconnect() called', { guildId });
 
     if (!this.connections.has(guildId)) {
-      const error = new VoiceConnectionError(
-        VoiceErrorType.INVALID_GUILD,
-        `No connection found for guild ${guildId}`,
-        { guildId }
-      );
+      const error = new VoiceConnectionError(VoiceErrorType.INVALID_GUILD, `No connection found for guild ${guildId}`, {
+        guildId,
+      });
       throw error;
     }
 
@@ -282,7 +280,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Retrieves an active connection for a guild
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns VoiceConnection or null if not connected
    */
@@ -292,7 +290,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Retrieves connection metadata
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns VoiceConnectionInfo or null if not connected
    */
@@ -302,7 +300,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Gets all active connections
-   * 
+   *
    * @returns Map<guildId, VoiceConnection>
    */
   getAllConnections(): Map<string, VoiceConnection> {
@@ -311,7 +309,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Gets all connection info objects
-   * 
+   *
    * @returns Map<guildId, VoiceConnectionInfo>
    */
   getAllConnectionInfo(): Map<string, VoiceConnectionInfo> {
@@ -320,7 +318,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Checks if connected to a specific guild
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns boolean
    */
@@ -330,7 +328,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Gets current connection state for a guild
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns ConnectionState or null if not connected
    */
@@ -345,15 +343,12 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Listens for state changes on a connection
-   * 
+   *
    * @param guildId - Guild to listen to
    * @param listener - Callback function
    * @returns Unsubscribe function
    */
-  onStateChange(
-    guildId: string,
-    listener: (state: ConnectionState) => void
-  ): () => void {
+  onStateChange(guildId: string, listener: (state: ConnectionState) => void): () => void {
     if (!this.stateListeners.has(guildId)) {
       this.stateListeners.set(guildId, new Set());
     }
@@ -368,14 +363,11 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Removes state change listener
-   * 
+   *
    * @param guildId - Guild
    * @param listener - Listener to remove
    */
-  offStateChange(
-    guildId: string,
-    listener: (state: ConnectionState) => void
-  ): void {
+  offStateChange(guildId: string, listener: (state: ConnectionState) => void): void {
     const listeners = this.stateListeners.get(guildId);
     if (listeners) {
       listeners.delete(listener);
@@ -391,14 +383,14 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Disconnects from all voice channels
-   * 
+   *
    * @returns Promise<void>
    */
   async disconnectAll(): Promise<void> {
     this.logger('disconnectAll() called');
 
     const guildIds = Array.from(this.connections.keys());
-    
+
     for (const guildId of guildIds) {
       try {
         await this.disconnect(guildId);
@@ -412,7 +404,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Destroys the manager and cleans up resources
-   * 
+   *
    * @returns Promise<void>
    */
   async destroy(): Promise<void> {
@@ -458,7 +450,7 @@ export class VoiceConnectionManager extends EventEmitter {
       maxRejoinAttempts: options?.maxRejoinAttempts ?? 3,
       debug: options?.debug ?? false,
       daveEncryption: options?.daveEncryption ?? true,
-      emitEvents: options?.emitEvents ?? true
+      emitEvents: options?.emitEvents ?? true,
     };
   }
 
@@ -480,7 +472,7 @@ export class VoiceConnectionManager extends EventEmitter {
   private createMockConnection(
     guildId: string,
     channelId: string,
-    config?: Partial<JoinVoiceChannelConfig>
+    config?: Partial<JoinVoiceChannelConfig>,
   ): VoiceConnection {
     // Return a mock VoiceConnection object that partially matches @discordjs/voice API
     return {
@@ -489,7 +481,7 @@ export class VoiceConnectionManager extends EventEmitter {
         guildId,
         channelId,
         selfMute: config?.selfMute ?? true,
-        selfDeaf: config?.selfDeaf ?? true
+        selfDeaf: config?.selfDeaf ?? true,
       },
       // Voice state (status: 0 = idle/disconnected, 1 = connecting, 2 = connected)
       state: { status: 0 },
@@ -500,18 +492,18 @@ export class VoiceConnectionManager extends EventEmitter {
       },
       // Audio streaming interface
       subscribe: (transform: any) => ({
-        unsubscribe: () => {}
+        unsubscribe: () => {},
       }),
       // Event emitter interface
-      on: (event: string, listener: any) => ({} as any),
-      once: (event: string, listener: any) => ({} as any),
+      on: (event: string, listener: any) => ({}) as any,
+      once: (event: string, listener: any) => ({}) as any,
       emit: (event: string, ...args: any[]) => true,
-      removeListener: (event: string, listener: any) => ({} as any),
-      removeAllListeners: (event?: string) => ({} as any),
+      removeListener: (event: string, listener: any) => ({}) as any,
+      removeAllListeners: (event?: string) => ({}) as any,
       // Playback control (not implemented in Phase 2)
       play: () => ({}),
       pause: () => true,
-      resume: () => true
+      resume: () => true,
     } as any as VoiceConnection;
   }
 
@@ -519,10 +511,7 @@ export class VoiceConnectionManager extends EventEmitter {
    * Sets up event listeners on a voice connection
    * @private
    */
-  private setupConnectionListeners(
-    guildId: string,
-    connection: VoiceConnection
-  ): void {
+  private setupConnectionListeners(guildId: string, connection: VoiceConnection): void {
     this.logger('setupConnectionListeners()', { guildId });
 
     // In a real implementation, would subscribe to connection state changes
@@ -533,11 +522,7 @@ export class VoiceConnectionManager extends EventEmitter {
    * Updates connection state
    * @private
    */
-  private updateConnectionState(
-    guildId: string,
-    status: ConnectionStateType,
-    reason?: string
-  ): void {
+  private updateConnectionState(guildId: string, status: ConnectionStateType, reason?: string): void {
     const info = this.connectionInfo.get(guildId);
     if (!info) {
       if (this.options.debug) {
@@ -552,7 +537,7 @@ export class VoiceConnectionManager extends EventEmitter {
     const newState: ConnectionState = {
       status,
       timestamp: now,
-      reason
+      reason,
     };
 
     info.state = newState;
@@ -570,11 +555,7 @@ export class VoiceConnectionManager extends EventEmitter {
    * Emits state change event
    * @private
    */
-  private emitStateChange(
-    guildId: string,
-    newState: ConnectionState,
-    oldState?: ConnectionState
-  ): void {
+  private emitStateChange(guildId: string, newState: ConnectionState, oldState?: ConnectionState): void {
     this.logger('emitStateChange()', { guildId, status: newState.status });
 
     // Emit to EventEmitter listeners
@@ -597,29 +578,25 @@ export class VoiceConnectionManager extends EventEmitter {
    * Validates guild and channel exist
    * @private
    */
-  private validateGuildAndChannel(
-    guildId: string,
-    channelId: string
-  ): void {
+  private validateGuildAndChannel(guildId: string, channelId: string): void {
     const guild = this.botClient.guilds?.get?.(guildId);
-    
+
     if (!guild) {
-      const error = new VoiceConnectionError(
-        VoiceErrorType.INVALID_GUILD,
-        `Guild ${guildId} not found`,
-        { guildId, channelId }
-      );
+      const error = new VoiceConnectionError(VoiceErrorType.INVALID_GUILD, `Guild ${guildId} not found`, {
+        guildId,
+        channelId,
+      });
       this.tryEmitError(guildId, error);
       throw error;
     }
 
     const channel = guild.channels?.cache?.get?.(channelId);
-    
+
     if (!channel) {
       const error = new VoiceConnectionError(
         VoiceErrorType.INVALID_CHANNEL,
         `Channel ${channelId} not found in guild ${guildId}`,
-        { guildId, channelId }
+        { guildId, channelId },
       );
       this.tryEmitError(guildId, error);
       throw error;
@@ -707,7 +684,11 @@ export class VoiceConnectionManager extends EventEmitter {
       return false;
     } catch (error) {
       // Log error for debugging
-      this.logger('Error checking permissions', { guildId, channelId, error: error instanceof Error ? error.message : String(error) });
+      this.logger('Error checking permissions', {
+        guildId,
+        channelId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Fail closed: deny if we can't check
       return false;
     }
@@ -744,7 +725,7 @@ export class VoiceConnectionManager extends EventEmitter {
         const error = new VoiceConnectionError(
           VoiceErrorType.CONNECTION_TIMEOUT,
           `Connection to voice channel in guild ${guildId} timed out after ${this.options.connectionTimeout}ms`,
-          { guildId }
+          { guildId },
         );
         this.emit('error', guildId, error);
         this.cleanupConnection(guildId);

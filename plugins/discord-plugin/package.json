@@ -24,10 +24,11 @@
     "openclaw": "^2026.2.2",
     "discord.js": "^14.14.0"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "openclaw": {
-    "extensions": ["./index.ts"],
+    "extensions": [
+      "./index.ts"
+    ],
     "type": "discord-plugin"
   }
 }

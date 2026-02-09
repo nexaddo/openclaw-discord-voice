@@ -2,13 +2,14 @@
 
 **Status:** ✅ Research Complete  
 **Date:** 2026-02-06 18:31 EST  
-**Researcher:** Voice Integration Planning Agent (Phi-3 Mini)  
+**Researcher:** Voice Integration Planning Agent (Phi-3 Mini)
 
 ---
 
 ## Start Here 👇
 
 ### For Busy People: RESEARCH_COMPLETE.md
+
 - Executive summary of findings
 - Key decisions and no-blockers
 - Quick start guide for implementation
@@ -16,6 +17,7 @@
 - **👉 Read this first**
 
 ### For Implementation: PHASE1_SUMMARY.md
+
 - Condensed findings table
 - Installation commands
 - Success criteria
@@ -27,9 +29,11 @@
 ## Full Documentation
 
 ### 1. PHASE1_RESEARCH_REPORT.md ⭐
+
 **Most Comprehensive (20 KB)**
 
 Sections:
+
 - Executive Summary
 - 1. Current State (what's already available)
 - 2. Required Dependencies (exact packages & versions)
@@ -42,9 +46,11 @@ Sections:
 **Use for:** Deep understanding of all decisions
 
 ### 2. PHASE1_SUMMARY.md
+
 **Executive Overview (2.7 KB)**
 
 Quick facts:
+
 - Status table
 - Installation command
 - Success criteria
@@ -53,9 +59,11 @@ Quick facts:
 **Use for:** Quick reference before starting work
 
 ### 3. DEPENDENCIES.md ⭐
+
 **Reference Guide (9.6 KB)**
 
 Sections:
+
 - Dependency Matrix
 - Installation Manifest
 - Version Compatibility
@@ -67,9 +75,11 @@ Sections:
 **Use for:** During implementation as reference
 
 ### 4. .agents/phase1-completion-checklist.md ⭐
+
 **Step-by-Step Guide (13 KB)**
 
 Sections:
+
 - Pre-Implementation Review
 - Installation Phase (5 steps)
 - Plugin Structure Phase (5 steps)
@@ -83,6 +93,7 @@ Sections:
 **Use for:** Actually doing the implementation work
 
 ### 5. RESEARCH_COMPLETE.md
+
 **Completion Report (7.4 KB)**
 
 - What was accomplished
@@ -114,32 +125,35 @@ openclaw-discord-voice/
 
 ## Quick Facts Summary
 
-| Item | Value |
-|------|-------|
-| **Main Installation** | @discordjs/opus@^0.10.0 |
+| Item                      | Value                                 |
+| ------------------------- | ------------------------------------- |
+| **Main Installation**     | @discordjs/opus@^0.10.0               |
 | **Installation Location** | /usr/local/lib/node_modules/openclaw/ |
-| **Time Required** | 2-3 hours total |
-| **Risk Level** | 🟢 LOW |
-| **Blockers** | None identified |
-| **Success Rate** | 95%+ estimated |
-| **Next Phase** | Phase 2: VoiceConnectionManager |
+| **Time Required**         | 2-3 hours total                       |
+| **Risk Level**            | 🟢 LOW                                |
+| **Blockers**              | None identified                       |
+| **Success Rate**          | 95%+ estimated                        |
+| **Next Phase**            | Phase 2: VoiceConnectionManager       |
 
 ---
 
 ## Reading Paths by Role
 
 ### Main Agent (Approval Role)
+
 1. **RESEARCH_COMPLETE.md** (5 min) - Understand what was researched
 2. **PHASE1_SUMMARY.md** (5 min) - See key findings
 3. **Decide** - Approve to proceed with implementation
 
 ### Implementation Agent
+
 1. **PHASE1_SUMMARY.md** (5 min) - Quick overview
 2. **phase1-completion-checklist.md** (follow steps) - Do the work
 3. **DEPENDENCIES.md** (reference) - Troubleshoot if needed
 4. **Report back** - Phase 1 completion
 
 ### Code Review Agent
+
 1. **DEPENDENCIES.md** (10 min) - Understand choices
 2. **phase1-completion-checklist.md** (10 min) - Review test plan
 3. **Review commits** - Check against checklist
@@ -149,59 +163,69 @@ openclaw-discord-voice/
 ## Document Purposes
 
 ### RESEARCH_COMPLETE.md
+
 **Purpose:** Executive summary for approval  
 **Audience:** Main agent, leadership  
 **Length:** 7.4 KB (5-7 min read)  
-**Contains:** Overview, decisions, blockers, next steps  
+**Contains:** Overview, decisions, blockers, next steps
 
 ### PHASE1_SUMMARY.md
+
 **Purpose:** Quick reference before work begins  
 **Audience:** Implementation agent  
 **Length:** 2.7 KB (2-3 min read)  
-**Contains:** Facts table, commands, criteria, timeline  
+**Contains:** Facts table, commands, criteria, timeline
 
 ### PHASE1_RESEARCH_REPORT.md
+
 **Purpose:** Complete technical analysis  
 **Audience:** Anyone wanting deep understanding  
 **Length:** 20 KB (20-30 min read)  
-**Contains:** All 7 sections, detailed rationale, alternatives  
+**Contains:** All 7 sections, detailed rationale, alternatives
 
 ### DEPENDENCIES.md
+
 **Purpose:** Reference during implementation  
 **Audience:** Developers, implementers  
 **Length:** 9.6 KB (lookup reference)  
-**Contains:** All dependency options, versions, setup  
+**Contains:** All dependency options, versions, setup
 
 ### phase1-completion-checklist.md
+
 **Purpose:** Step-by-step implementation guide  
 **Audience:** Implementation agent  
 **Length:** 13 KB (2-3 hours work)  
-**Contains:** Every step with verification  
+**Contains:** Every step with verification
 
 ---
 
 ## Key Findings at a Glance
 
 ### ✅ What's Already Available
+
 - @discordjs/voice 0.19.0
 - prism-media 1.3.5
 - All Discord API types
 - WebSocket support
 
 ### 🔧 What to Install
+
 - **CRITICAL:** @discordjs/opus@^0.10.0 (~50MB)
 - **OPTIONAL:** sodium-native, libsodium-wrappers, ffmpeg-static
 
 ### 📦 Where to Install
+
 - Main OpenClaw (/usr/local/lib/node_modules/openclaw/)
 - NOT plugin-specific (avoids duplication)
 
 ### ✨ What's New
+
 - Plugin structure defined
 - TypeScript build pipeline prepared
 - Integration points documented
 
 ### 🚫 What's NOT Needed
+
 - Sodium libraries (Node.js 22 has native crypto)
 - FFmpeg (unless arbitrary audio formats needed)
 
@@ -231,28 +255,28 @@ openclaw-discord-voice/
 ✅ Installation procedure documented  
 ✅ Plugin structure defined  
 ✅ TypeScript configuration template provided  
-✅ Integration strategy documented  
+✅ Integration strategy documented
 
 **NOT yet done (Phase 2 work):**
 🔲 Actual package installation  
 🔲 VoiceConnectionManager implementation  
 🔲 Connection state management  
-🔲 Event handling  
+🔲 Event handling
 
 ---
 
 ## Timeline
 
-| Phase | Duration | Status |
-|-------|----------|--------|
-| Phase 1: Dependencies | 2-3 hours | 🔍 RESEARCHING |
-| Phase 2: Voice Connection | 3-4 hours | ⏳ Next |
-| Phase 3: Audio Streams | 3-4 hours | ⏳ Later |
-| Phase 4: STT (Whisper) | 2-3 hours | ⏳ Later |
-| Phase 5: TTS (ElevenLabs) | 2-3 hours | ⏳ Later |
-| Phase 6: Voice Pipeline | 2-3 hours | ⏳ Later |
-| Phase 7: Discord Commands | 1-2 hours | ⏳ Later |
-| Phase 8: Config & Docs | 1-2 hours | ⏳ Later |
+| Phase                     | Duration  | Status         |
+| ------------------------- | --------- | -------------- |
+| Phase 1: Dependencies     | 2-3 hours | 🔍 RESEARCHING |
+| Phase 2: Voice Connection | 3-4 hours | ⏳ Next        |
+| Phase 3: Audio Streams    | 3-4 hours | ⏳ Later       |
+| Phase 4: STT (Whisper)    | 2-3 hours | ⏳ Later       |
+| Phase 5: TTS (ElevenLabs) | 2-3 hours | ⏳ Later       |
+| Phase 6: Voice Pipeline   | 2-3 hours | ⏳ Later       |
+| Phase 7: Discord Commands | 1-2 hours | ⏳ Later       |
+| Phase 8: Config & Docs    | 1-2 hours | ⏳ Later       |
 
 **Total Estimated:** 16-24 hours across all phases
 
@@ -261,14 +285,17 @@ openclaw-discord-voice/
 ## Blockers & Risks
 
 ### Identified Blockers
+
 🟢 **NONE** - All dependencies available and compatible
 
 ### Low-Risk Items
+
 - Native compilation might need build tools
 - Some platforms might need extra steps
 - Optional dependencies might fail (that's ok)
 
 ### Mitigations Provided
+
 - Build tool installation instructions included
 - Fallback implementations documented
 - Platform-specific guidance provided
@@ -279,27 +306,31 @@ openclaw-discord-voice/
 ## Next Checkpoint
 
 ### For Main Agent
+
 📋 **ACTION:** Review and approve Phase 1 research  
 📋 **REVIEW:** RESEARCH_COMPLETE.md  
 📋 **DECISION:** Proceed to implementation?  
-📋 **NEXT:** Activate Implementation Agent  
+📋 **NEXT:** Activate Implementation Agent
 
 ### For Implementation Agent
+
 📋 **ACTION:** Read PHASE1_SUMMARY.md (5 min)  
 📋 **ACTION:** Follow phase1-completion-checklist.md  
 📋 **ACTION:** Run all smoke tests  
-📋 **ACTION:** Report completion with test results  
+📋 **ACTION:** Report completion with test results
 
 ---
 
 ## Questions?
 
 **Most common questions answered in:**
+
 - RESEARCH_COMPLETE.md → FAQ section
 - DEPENDENCIES.md → Troubleshooting section
 - phase1-completion-checklist.md → Blockers & Mitigation section
 
 **Research details:**
+
 - All rationale in PHASE1_RESEARCH_REPORT.md
 - All alternatives in DEPENDENCIES.md
 - All steps in phase1-completion-checklist.md
@@ -308,14 +339,14 @@ openclaw-discord-voice/
 
 ## File Sizes & Read Times
 
-| File | Size | Read Time |
-|------|------|-----------|
-| RESEARCH_COMPLETE.md | 7.4 KB | 5-7 min |
-| PHASE1_SUMMARY.md | 2.7 KB | 2-3 min |
-| PHASE1_RESEARCH_REPORT.md | 20 KB | 20-30 min |
-| DEPENDENCIES.md | 9.6 KB | 10-15 min (reference) |
-| phase1-completion-checklist.md | 13 KB | 2-3 hours (work) |
-| **TOTAL** | **52.7 KB** | **5-40 min + 2-3 hours work** |
+| File                           | Size        | Read Time                     |
+| ------------------------------ | ----------- | ----------------------------- |
+| RESEARCH_COMPLETE.md           | 7.4 KB      | 5-7 min                       |
+| PHASE1_SUMMARY.md              | 2.7 KB      | 2-3 min                       |
+| PHASE1_RESEARCH_REPORT.md      | 20 KB       | 20-30 min                     |
+| DEPENDENCIES.md                | 9.6 KB      | 10-15 min (reference)         |
+| phase1-completion-checklist.md | 13 KB       | 2-3 hours (work)              |
+| **TOTAL**                      | **52.7 KB** | **5-40 min + 2-3 hours work** |
 
 ---
 

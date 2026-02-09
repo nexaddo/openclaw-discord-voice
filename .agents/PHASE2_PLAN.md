@@ -13,6 +13,7 @@
 Phase 2 implements the **VoiceConnectionManager** class, which serves as the core abstraction layer for joining/leaving Discord voice channels. This is the critical foundation upon which all subsequent phases (audio handling, STT, TTS) depend.
 
 **Key Components:**
+
 - `VoiceConnectionManager` class with connection lifecycle management
 - Type definitions for connection states and error scenarios
 - Comprehensive test suite (TDD approach)
@@ -20,6 +21,7 @@ Phase 2 implements the **VoiceConnectionManager** class, which serves as the cor
 - Event-based state change notifications
 
 **Critical Success Criteria:**
+
 - Join voice channels programmatically
 - Leave voice channels cleanly
 - Track connection state correctly
@@ -217,9 +219,9 @@ export interface VoiceConfig {
   guildId: string;
   channelId: string;
   userId: string;
-  connectionState: ConnectionState;  // NEW
-  selfMute?: boolean;                // NEW
-  selfDeaf?: boolean;                // NEW
+  connectionState: ConnectionState; // NEW
+  selfMute?: boolean; // NEW
+  selfDeaf?: boolean; // NEW
 }
 ```
 
@@ -229,20 +231,20 @@ export interface VoiceConfig {
 
 ### Class Overview
 
-```typescript
+````typescript
 import { EventEmitter } from 'node:events';
 import { VoiceConnection } from '@discordjs/voice';
 
 /**
  * Manages voice connections for Discord guilds
- * 
+ *
  * This class handles:
  * - Joining voice channels
  * - Leaving voice channels
  * - Tracking connection state
  * - Managing reconnections
  * - Error handling and recovery
- * 
+ *
  * Usage:
  * ```typescript
  * const manager = new VoiceConnectionManager(botClient, options);
@@ -303,7 +305,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Creates a new VoiceConnectionManager
-   * 
+   *
    * @param botClient - Discord.js bot client
    * @param options - Configuration options
    * @throws {VoiceConnectionError} If botClient is invalid
@@ -316,12 +318,12 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Joins a voice channel and establishes connection
-   * 
+   *
    * @param guildId - ID of the guild
    * @param channelId - ID of the voice channel
    * @param config - Optional connection configuration
    * @returns Promise<VoiceConnection> - Active connection
-   * 
+   *
    * @throws {VoiceConnectionError}
    * - INVALID_GUILD: Guild not found
    * - INVALID_CHANNEL: Channel not found
@@ -330,7 +332,7 @@ export class VoiceConnectionManager extends EventEmitter {
    * - CONNECTION_TIMEOUT: Connection took too long
    * - ADAPTER_CREATION_FAILED: Failed to create gateway adapter
    * - DISCORD_API_ERROR: Unexpected API error
-   * 
+   *
    * @example
    * ```typescript
    * try {
@@ -343,21 +345,17 @@ export class VoiceConnectionManager extends EventEmitter {
    * }
    * ```
    */
-  async connect(
-    guildId: string,
-    channelId: string,
-    config?: Partial<JoinVoiceChannelConfig>
-  ): Promise<VoiceConnection>;
+  async connect(guildId: string, channelId: string, config?: Partial<JoinVoiceChannelConfig>): Promise<VoiceConnection>;
 
   /**
    * Disconnects from a voice channel
-   * 
+   *
    * @param guildId - ID of the guild to disconnect from
    * @returns Promise<void>
-   * 
+   *
    * @throws {VoiceConnectionError}
    * - INVALID_GUILD: No connection for this guild
-   * 
+   *
    * @example
    * ```typescript
    * await manager.disconnect(guildId);
@@ -367,10 +365,10 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Retrieves an active connection for a guild
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns VoiceConnection or null if not connected
-   * 
+   *
    * @example
    * ```typescript
    * const connection = manager.getConnection(guildId);
@@ -383,7 +381,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Retrieves connection metadata
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns VoiceConnectionInfo or null if not connected
    */
@@ -391,21 +389,21 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Gets all active connections
-   * 
+   *
    * @returns Map<guildId, VoiceConnection>
    */
   getAllConnections(): Map<string, VoiceConnection>;
 
   /**
    * Gets all connection info objects
-   * 
+   *
    * @returns Map<guildId, VoiceConnectionInfo>
    */
   getAllConnectionInfo(): Map<string, VoiceConnectionInfo>;
 
   /**
    * Checks if connected to a specific guild
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns boolean
    */
@@ -413,7 +411,7 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Gets current connection state for a guild
-   * 
+   *
    * @param guildId - ID of the guild
    * @returns ConnectionState or null if not connected
    */
@@ -425,11 +423,11 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Listens for state changes on a connection
-   * 
+   *
    * @param guildId - Guild to listen to
    * @param listener - Callback function
    * @returns Unsubscribe function
-   * 
+   *
    * @example
    * ```typescript
    * const unsubscribe = manager.onStateChange(guildId, (state) => {
@@ -438,21 +436,15 @@ export class VoiceConnectionManager extends EventEmitter {
    * unsubscribe(); // Stop listening
    * ```
    */
-  onStateChange(
-    guildId: string,
-    listener: (state: ConnectionState) => void
-  ): () => void;
+  onStateChange(guildId: string, listener: (state: ConnectionState) => void): () => void;
 
   /**
    * Removes state change listener
-   * 
+   *
    * @param guildId - Guild
    * @param listener - Listener to remove
    */
-  offStateChange(
-    guildId: string,
-    listener: (state: ConnectionState) => void
-  ): void;
+  offStateChange(guildId: string, listener: (state: ConnectionState) => void): void;
 
   // ========================================
   // Cleanup
@@ -460,14 +452,14 @@ export class VoiceConnectionManager extends EventEmitter {
 
   /**
    * Disconnects from all voice channels
-   * 
+   *
    * @returns Promise<void>
    */
   async disconnectAll(): Promise<void>;
 
   /**
    * Destroys the manager and cleans up resources
-   * 
+   *
    * @returns Promise<void>
    */
   async destroy(): Promise<void>;
@@ -486,49 +478,31 @@ export class VoiceConnectionManager extends EventEmitter {
    * Sets up event listeners on a voice connection
    * @private
    */
-  private setupConnectionListeners(
-    guildId: string,
-    connection: VoiceConnection
-  ): void;
+  private setupConnectionListeners(guildId: string, connection: VoiceConnection): void;
 
   /**
    * Updates connection state
    * @private
    */
-  private updateConnectionState(
-    guildId: string,
-    status: ConnectionStateType,
-    reason?: string
-  ): void;
+  private updateConnectionState(guildId: string, status: ConnectionStateType, reason?: string): void;
 
   /**
    * Emits state change event
    * @private
    */
-  private emitStateChange(
-    guildId: string,
-    newState: ConnectionState,
-    oldState?: ConnectionState
-  ): void;
+  private emitStateChange(guildId: string, newState: ConnectionState, oldState?: ConnectionState): void;
 
   /**
    * Handles connection errors
    * @private
    */
-  private handleConnectionError(
-    guildId: string,
-    error: Error,
-    context: string
-  ): void;
+  private handleConnectionError(guildId: string, error: Error, context: string): void;
 
   /**
    * Validates guild and channel exist
    * @private
    */
-  private validateGuildAndChannel(
-    guildId: string,
-    channelId: string
-  ): Promise<void>;
+  private validateGuildAndChannel(guildId: string, channelId: string): Promise<void>;
 
   /**
    * Checks if bot has permission to connect and speak
@@ -542,7 +516,7 @@ export class VoiceConnectionManager extends EventEmitter {
    */
   private cleanupConnection(guildId: string): void;
 }
-```
+````
 
 ---
 
@@ -595,7 +569,7 @@ describe('VoiceConnectionManager', () => {
     it('should accept optional configuration', () => {
       const options = {
         connectionTimeout: 5000,
-        maxRejoinAttempts: 5
+        maxRejoinAttempts: 5,
       };
       manager = new VoiceConnectionManager(mockBotClient, options);
       expect(manager).toBeDefined();
@@ -741,7 +715,7 @@ describe('VoiceConnectionManager', () => {
       const channelId = 'channel-456';
 
       manager = new VoiceConnectionManager(mockBotClient, {
-        connectionTimeout: 100 // Very short timeout
+        connectionTimeout: 100, // Very short timeout
       });
 
       try {
@@ -758,7 +732,7 @@ describe('VoiceConnectionManager', () => {
 
       const connection = await manager.connect(guildId, channelId, {
         selfMute: false,
-        selfDeaf: false
+        selfDeaf: false,
       });
 
       expect(connection).toBeDefined();
@@ -770,7 +744,7 @@ describe('VoiceConnectionManager', () => {
       const channelId = 'channel-456';
 
       const connection = await manager.connect(guildId, channelId, {
-        group: 'custom-group'
+        group: 'custom-group',
       });
 
       expect(connection).toBeDefined();
@@ -918,7 +892,7 @@ describe('VoiceConnectionManager', () => {
       const firstChange = info1?.lastStatusChange;
 
       // Wait a bit and trigger another state change
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
 
       // (State change would happen naturally, but in tests may need to mock)
       const info2 = manager.getConnectionInfo(guildId);
@@ -1011,7 +985,7 @@ describe('VoiceConnectionManager', () => {
 
     it('should not emit events if emitEvents option is false', async () => {
       manager = new VoiceConnectionManager(mockBotClient, {
-        emitEvents: false
+        emitEvents: false,
       });
 
       let eventEmitted = false;
@@ -1101,7 +1075,7 @@ describe('VoiceConnectionManager', () => {
 
     it('should clear timeouts on destroy', async () => {
       manager = new VoiceConnectionManager(mockBotClient, {
-        connectionTimeout: 5000
+        connectionTimeout: 5000,
       });
 
       // Start a connection (may timeout)
@@ -1187,45 +1161,39 @@ function createMockBotClient(): any {
       ['guild-no-perms', createMockGuild('guild-no-perms', ['channel-456'], false)],
     ]),
     user: {
-      id: 'bot-user-id'
+      id: 'bot-user-id',
     },
     voice: {
-      adapters: new Map()
+      adapters: new Map(),
     },
     ws: {
-      on: vi.fn()
-    }
+      on: vi.fn(),
+    },
   };
 }
 
 /**
  * Creates a mock guild
  */
-function createMockGuild(
-  guildId: string,
-  channelIds: string[],
-  hasPermissions: boolean = true
-): any {
+function createMockGuild(guildId: string, channelIds: string[], hasPermissions: boolean = true): any {
   return {
     id: guildId,
     channels: {
-      cache: new Map(
-        channelIds.map(id => [id, createMockVoiceChannel(id)])
-      ),
+      cache: new Map(channelIds.map((id) => [id, createMockVoiceChannel(id)])),
       fetch: vi.fn((id) => {
         if (channelIds.includes(id)) {
           return Promise.resolve(createMockVoiceChannel(id));
         }
         return Promise.reject(new Error('Channel not found'));
-      })
+      }),
     },
     members: {
       fetchMe: vi.fn(async () => ({
         permissions: {
-          has: vi.fn(() => hasPermissions)
-        }
-      }))
-    }
+          has: vi.fn(() => hasPermissions),
+        },
+      })),
+    },
   };
 }
 
@@ -1238,8 +1206,8 @@ function createMockVoiceChannel(channelId: string): any {
     type: 'GUILD_VOICE',
     isVoice: vi.fn(() => true),
     guild: {
-      id: 'guild-123'
-    }
+      id: 'guild-123',
+    },
   };
 }
 ```
@@ -1250,17 +1218,17 @@ function createMockVoiceChannel(channelId: string): any {
 
 ### Error Type Mapping
 
-| Error Type | Scenario | HTTP Code | Recovery |
-|------------|----------|-----------|----------|
-| INVALID_GUILD | Guild doesn't exist | 404 | Verify guild ID, check if bot is in guild |
-| INVALID_CHANNEL | Channel doesn't exist or wrong type | 404 | Verify channel ID, check it's a voice channel |
-| NO_PERMISSION | Bot lacks CONNECT/SPEAK | 403 | Request permissions, check role setup |
-| ALREADY_CONNECTED | Bot in voice channel (same guild) | 409 | Disconnect first, or use existing connection |
-| CONNECTION_TIMEOUT | Connection took too long | - | Retry with longer timeout, check network |
-| NETWORK_ERROR | Discord unreachable | 5xx | Retry exponential backoff |
-| DISCORD_API_ERROR | Unexpected API error | Various | Log full error, retry later |
-| INVALID_STATE | Operation not allowed in current state | - | Wait for state change, check prerequisites |
-| ADAPTER_CREATION_FAILED | Cannot create gateway adapter | - | Check bot initialization, discord.js version |
+| Error Type              | Scenario                               | HTTP Code | Recovery                                      |
+| ----------------------- | -------------------------------------- | --------- | --------------------------------------------- |
+| INVALID_GUILD           | Guild doesn't exist                    | 404       | Verify guild ID, check if bot is in guild     |
+| INVALID_CHANNEL         | Channel doesn't exist or wrong type    | 404       | Verify channel ID, check it's a voice channel |
+| NO_PERMISSION           | Bot lacks CONNECT/SPEAK                | 403       | Request permissions, check role setup         |
+| ALREADY_CONNECTED       | Bot in voice channel (same guild)      | 409       | Disconnect first, or use existing connection  |
+| CONNECTION_TIMEOUT      | Connection took too long               | -         | Retry with longer timeout, check network      |
+| NETWORK_ERROR           | Discord unreachable                    | 5xx       | Retry exponential backoff                     |
+| DISCORD_API_ERROR       | Unexpected API error                   | Various   | Log full error, retry later                   |
+| INVALID_STATE           | Operation not allowed in current state | -         | Wait for state change, check prerequisites    |
+| ADAPTER_CREATION_FAILED | Cannot create gateway adapter          | -         | Check bot initialization, discord.js version  |
 
 ### Error Recovery Strategy
 
@@ -1353,6 +1321,7 @@ Disconnected
 ## Part 6: Implementation Checklist
 
 ### Pre-Implementation Verification
+
 - [ ] Read Phase 1 completion report
 - [ ] Verify @discordjs/voice 0.19.0 is available
 - [ ] Understand @discordjs/voice API from documentation
@@ -1360,6 +1329,7 @@ Disconnected
 - [ ] Check testing setup (vitest configured)
 
 ### Type Definitions Implementation
+
 - [ ] Add all interfaces to `src/types.ts`
 - [ ] Add VoiceErrorType enum
 - [ ] Add VoiceConnectionError class
@@ -1370,6 +1340,7 @@ Disconnected
 - [ ] Export all types from index.ts
 
 ### VoiceConnectionManager Implementation
+
 - [ ] Create `src/VoiceConnectionManager.ts`
 - [ ] Implement constructor with validation
 - [ ] Implement connect() method
@@ -1389,6 +1360,7 @@ Disconnected
 - [ ] Compile TypeScript and verify no errors
 
 ### Test Implementation
+
 - [ ] Create test file `__tests__/VoiceConnectionManager.test.ts`
 - [ ] Implement constructor/initialization tests (5 tests)
 - [ ] Implement connection tests (11 tests)
@@ -1404,6 +1376,7 @@ Disconnected
 - [ ] Check test coverage (target >80%)
 
 ### Integration & Build
+
 - [ ] Update `src/index.ts` exports
 - [ ] Update `package.json` if needed
 - [ ] Run build: `npm run build`
@@ -1412,6 +1385,7 @@ Disconnected
 - [ ] Check generated type definitions
 
 ### Documentation
+
 - [ ] Add JSDoc to all public methods
 - [ ] Add usage examples in docs
 - [ ] Document error scenarios
@@ -1420,6 +1394,7 @@ Disconnected
 - [ ] Create VoiceConnectionManager README section
 
 ### Quality Assurance
+
 - [ ] Run all tests
 - [ ] Verify >80% code coverage
 - [ ] Run TypeScript strict mode check
@@ -1428,6 +1403,7 @@ Disconnected
 - [ ] Verify event cleanup on destroy
 
 ### Final Verification
+
 - [ ] All tests passing
 - [ ] Build succeeds with no errors
 - [ ] Type definitions correct
@@ -1436,6 +1412,7 @@ Disconnected
 - [ ] Ready for Phase 3
 
 ### Success Criteria Met
+
 - [ ] Can join voice channels programmatically
 - [ ] Can leave voice channels cleanly
 - [ ] Connection state tracked correctly
@@ -1449,6 +1426,7 @@ Disconnected
 ## Part 7: Success Criteria for Phase 2
 
 ### Functional Requirements
+
 ✅ Join voice channel with `connect(guildId, channelId)`
 ✅ Leave voice channel with `disconnect(guildId)`
 ✅ Retrieve active connections with `getConnection(guildId)`
@@ -1461,6 +1439,7 @@ Disconnected
 ✅ Support EventEmitter interface
 
 ### Code Quality Requirements
+
 ✅ >80% test coverage
 ✅ All 45+ tests passing
 ✅ Full TypeScript type safety
@@ -1470,6 +1449,7 @@ Disconnected
 ✅ Clean code structure
 
 ### Resource Management Requirements
+
 ✅ No memory leaks on disconnect
 ✅ Proper cleanup of listeners
 ✅ Timeout cancellation on destroy
@@ -1477,6 +1457,7 @@ Disconnected
 ✅ Connection map cleanup
 
 ### Performance Requirements
+
 ✅ Connection established <15 seconds (configurable)
 ✅ Memory usage stable across reconnects
 ✅ No event listener accumulation
@@ -1487,26 +1468,31 @@ Disconnected
 ## Part 8: Known Risks and Mitigations
 
 ### Risk 1: Gateway Adapter Creation
+
 **Issue:** Creating gateway adapter requires integration with discord.js gateway  
 **Mitigation:** Study discord.js voice examples, test with real bot in dev guild  
 **Fallback:** Research alternative adapter creation patterns
 
 ### Risk 2: State Synchronization
+
 **Issue:** @discordjs/voice state may not match our ConnectionState exactly  
 **Mitigation:** Map all @discordjs/voice states to our state enum, thorough testing  
 **Fallback:** Accept partial state mismatch, document differences
 
 ### Risk 3: Event Timing
+
 **Issue:** Events may fire in unexpected order or timing  
 **Mitigation:** Test state transitions carefully, log all transitions in debug mode  
 **Fallback:** Implement timeouts as safety mechanism
 
 ### Risk 4: Concurrent Connections
+
 **Issue:** Managing multiple guild connections simultaneously  
 **Mitigation:** Use Map<guildId, connection> structure, test with 5+ simultaneous  
 **Fallback:** Add connection limits if needed
 
 ### Risk 5: Network Errors
+
 **Issue:** Transient network failures during connection  
 **Mitigation:** Implement retry logic, test with network simulation  
 **Fallback:** Expose retry mechanism to caller
@@ -1516,16 +1502,19 @@ Disconnected
 ## Part 9: Dependencies and Prerequisites
 
 ### Required
+
 - Node.js 22.x
 - @discordjs/voice 0.19.0
 - discord.js 14.x (for bot client)
 - TypeScript 5.9+
 
 ### Development
+
 - vitest 4.0+
 - @types/node 25.2+
 
 ### Verification Command
+
 ```bash
 npm list @discordjs/voice discord.js
 # Should show installed versions
@@ -1549,15 +1538,18 @@ npm list @discordjs/voice discord.js
 ## Files to Create/Modify
 
 ### Create
+
 - `plugins/voice-extension/src/VoiceConnectionManager.ts` ← Main class (400-500 lines)
 - `plugins/voice-extension/__tests__/VoiceConnectionManager.test.ts` ← Tests (500-700 lines)
 
 ### Modify
+
 - `plugins/voice-extension/src/types.ts` ← Add new types (+150 lines)
 - `plugins/voice-extension/src/index.ts` ← Update exports (+5 lines)
 - `plugins/voice-extension/package.json` ← May need script updates (if any)
 
 ### Total Lines of Code (Estimate)
+
 - Types: 150 lines
 - Main class: 450 lines
 - Tests: 600 lines
@@ -1568,12 +1560,14 @@ npm list @discordjs/voice discord.js
 ## What Phase 3 Depends On
 
 Phase 3 (AudioStreamHandler) will depend on:
+
 - ✅ VoiceConnection object from Phase 2
 - ✅ Connection state tracking from Phase 2
 - ✅ Event emission from Phase 2
 - ✅ Error handling from Phase 2
 
 Phase 3 will NOT depend on:
+
 - Actual audio capture (that's Phase 3's job)
 - STT/TTS (Phases 4-5)
 - Discord commands (Phase 7)
@@ -1590,26 +1584,31 @@ Phase 3 will NOT depend on:
 ## Appendix: Quick Reference
 
 ### Key Classes
+
 - `VoiceConnectionManager` - Main manager class
 - `VoiceConnectionError` - Custom error type
 
 ### Key Enums
+
 - `ConnectionStateType` - Connection states
 - `VoiceErrorType` - Error types
 
 ### Key Interfaces
+
 - `JoinVoiceChannelConfig` - Join options
 - `ConnectionState` - State info
 - `VoiceConnectionInfo` - Connection metadata
 - `VoiceConnectionManagerOptions` - Manager options
 
 ### Key Methods
+
 - `connect(guildId, channelId)` - Join voice channel
 - `disconnect(guildId)` - Leave voice channel
 - `getConnection(guildId)` - Get active connection
 - `getConnectionState(guildId)` - Get current state
 
 ### Key Events
+
 - `stateChange` - State changed
 - `ready` - Connection ready
 - `disconnected` - Disconnected

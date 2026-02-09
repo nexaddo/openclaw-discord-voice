@@ -17,7 +17,7 @@ describe('PipelineAdapter Integration', () => {
       stopListening: vi.fn(async () => {}),
       askQuestion: vi.fn(async (guildId: string, question: string) => {
         return `Mock response to: ${question}`;
-      })
+      }),
     };
   });
 
@@ -103,12 +103,10 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async () => {
           throw new Error('Pipeline timeout');
-        })
+        }),
       };
 
-      await expect(
-        mockAdapter.askQuestion('guild123', 'slow question')
-      ).rejects.toThrow('Pipeline timeout');
+      await expect(mockAdapter.askQuestion('guild123', 'slow question')).rejects.toThrow('Pipeline timeout');
     });
 
     it('should handle STT errors', async () => {
@@ -117,12 +115,10 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async () => {
           throw new Error('STT error: Could not transcribe audio');
-        })
+        }),
       };
 
-      await expect(
-        mockAdapter.askQuestion('guild123', 'noisy audio')
-      ).rejects.toThrow('STT error');
+      await expect(mockAdapter.askQuestion('guild123', 'noisy audio')).rejects.toThrow('STT error');
     });
 
     it('should handle TTS errors', async () => {
@@ -131,12 +127,10 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async () => {
           throw new Error('TTS error: Could not generate audio');
-        })
+        }),
       };
 
-      await expect(
-        mockAdapter.askQuestion('guild123', 'generate response')
-      ).rejects.toThrow('TTS error');
+      await expect(mockAdapter.askQuestion('guild123', 'generate response')).rejects.toThrow('TTS error');
     });
   });
 
@@ -151,7 +145,7 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async () => {
           return 'Response from pipeline';
-        })
+        }),
       };
 
       const response = await mockAdapter.askQuestion('guild123', 'test question');
@@ -165,19 +159,15 @@ describe('PipelineAdapter Integration', () => {
       const mockAdapter: IPipelineAdapter = {
         startListening: vi.fn(async () => {}),
         stopListening: vi.fn(async () => {}),
-        askQuestion: vi.fn(async () => 'Response')
+        askQuestion: vi.fn(async () => 'Response'),
       };
 
       await mockAdapter.startListening('guild123', 'channel123');
       const response = await mockAdapter.askQuestion('guild123', 'question');
       await mockAdapter.stopListening('guild123');
 
-      expect(mockAdapter.startListening).toHaveBeenCalledBefore(
-        mockAdapter.askQuestion as any
-      );
-      expect(mockAdapter.askQuestion).toHaveBeenCalledBefore(
-        mockAdapter.stopListening as any
-      );
+      expect(mockAdapter.startListening).toHaveBeenCalledBefore(mockAdapter.askQuestion as any);
+      expect(mockAdapter.askQuestion).toHaveBeenCalledBefore(mockAdapter.stopListening as any);
     });
   });
 
@@ -192,7 +182,7 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async (guildId: string, question: string) => {
           return `Rue responds: This is a response to "${question}"`;
-        })
+        }),
       };
 
       const guildId = 'guild123';
@@ -213,12 +203,8 @@ describe('PipelineAdapter Integration', () => {
       expect(mockAdapter.stopListening).toHaveBeenCalledWith(guildId);
 
       // Verify call order
-      expect(mockAdapter.startListening).toHaveBeenCalledBefore(
-        mockAdapter.askQuestion as any
-      );
-      expect(mockAdapter.askQuestion).toHaveBeenCalledBefore(
-        mockAdapter.stopListening as any
-      );
+      expect(mockAdapter.startListening).toHaveBeenCalledBefore(mockAdapter.askQuestion as any);
+      expect(mockAdapter.askQuestion).toHaveBeenCalledBefore(mockAdapter.stopListening as any);
     });
   });
 
@@ -233,14 +219,12 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async (guildId: string, question: string) => {
           return `Response to: ${question}`;
-        })
+        }),
       };
 
       const questions = ['Q1', 'Q2', 'Q3'];
 
-      const responses = await Promise.all(
-        questions.map(q => mockAdapter.askQuestion('guild123', q))
-      );
+      const responses = await Promise.all(questions.map((q) => mockAdapter.askQuestion('guild123', q)));
 
       expect(responses).toHaveLength(3);
       expect(mockAdapter.askQuestion).toHaveBeenCalledTimes(3);
@@ -252,14 +236,12 @@ describe('PipelineAdapter Integration', () => {
         stopListening: vi.fn(async () => {}),
         askQuestion: vi.fn(async (guildId: string, question: string) => {
           return `Response in ${guildId}`;
-        })
+        }),
       };
 
       const guildIds = ['guild1', 'guild2', 'guild3'];
 
-      const responses = await Promise.all(
-        guildIds.map(gId => mockAdapter.askQuestion(gId, 'question'))
-      );
+      const responses = await Promise.all(guildIds.map((gId) => mockAdapter.askQuestion(gId, 'question')));
 
       expect(responses).toHaveLength(3);
       expect(mockAdapter.askQuestion).toHaveBeenCalledTimes(3);
@@ -275,7 +257,7 @@ describe('PipelineAdapter Integration', () => {
       // This test verifies the adapter interface matches Phase 6 expectations
       const requiredMethods = ['startListening', 'stopListening', 'askQuestion'];
 
-      requiredMethods.forEach(method => {
+      requiredMethods.forEach((method) => {
         expect(adapter).toHaveProperty(method);
         expect(typeof (adapter as any)[method]).toBe('function');
       });

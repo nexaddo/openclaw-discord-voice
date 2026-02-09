@@ -12,20 +12,20 @@
 export interface JoinVoiceChannelConfig {
   guildId: string;
   channelId: string;
-  selfMute?: boolean;     // Default: true
-  selfDeaf?: boolean;     // Default: true
-  group?: string;         // Optional group identifier
+  selfMute?: boolean; // Default: true
+  selfDeaf?: boolean; // Default: true
+  group?: string; // Optional group identifier
 }
 
 /**
  * Connection state types
  */
 export enum ConnectionStateType {
-  Signalling = 'signalling',      // Sending voice state update to gateway
-  Connecting = 'connecting',      // Attempting to establish connection
-  Ready = 'ready',                // Connected and ready to use
-  Disconnected = 'disconnected',  // Disconnected (can reconnect)
-  Destroyed = 'destroyed'         // Destroyed (cannot reuse)
+  Signalling = 'signalling', // Sending voice state update to gateway
+  Connecting = 'connecting', // Attempting to establish connection
+  Ready = 'ready', // Connected and ready to use
+  Disconnected = 'disconnected', // Disconnected (can reconnect)
+  Destroyed = 'destroyed', // Destroyed (cannot reuse)
 }
 
 /**
@@ -34,8 +34,8 @@ export enum ConnectionStateType {
 export interface ConnectionState {
   status: ConnectionStateType;
   timestamp: number;
-  reason?: string;                // Why in this state
-  lastError?: Error;              // Last error encountered
+  reason?: string; // Why in this state
+  lastError?: Error; // Last error encountered
 }
 
 /**
@@ -44,11 +44,11 @@ export interface ConnectionState {
 export interface VoiceConnectionInfo {
   guildId: string;
   channelId: string;
-  userId: string;                 // Bot user ID
+  userId: string; // Bot user ID
   state: ConnectionState;
   createdAt: number;
   lastStatusChange: number;
-  rejoinAttempts: number;         // Number of reconnection attempts
+  rejoinAttempts: number; // Number of reconnection attempts
 }
 
 // ============================================
@@ -67,7 +67,7 @@ export enum VoiceErrorType {
   NETWORK_ERROR = 'NETWORK_ERROR',
   DISCORD_API_ERROR = 'DISCORD_API_ERROR',
   INVALID_STATE = 'INVALID_STATE',
-  ADAPTER_CREATION_FAILED = 'ADAPTER_CREATION_FAILED'
+  ADAPTER_CREATION_FAILED = 'ADAPTER_CREATION_FAILED',
 }
 
 /**
@@ -75,9 +75,13 @@ export enum VoiceErrorType {
  */
 export class VoiceConnectionError extends Error {
   type: VoiceErrorType;
+
   guildId?: string;
+
   channelId?: string;
+
   originalError?: Error;
+
   timestamp: number;
 
   constructor(
@@ -87,7 +91,7 @@ export class VoiceConnectionError extends Error {
       guildId?: string;
       channelId?: string;
       originalError?: Error;
-    }
+    },
   ) {
     super(message);
     this.name = 'VoiceConnectionError';
@@ -185,9 +189,9 @@ export interface VoiceConfig {
   guildId: string;
   channelId: string;
   userId: string;
-  connectionState?: ConnectionState;  // NEW
-  selfMute?: boolean;                // NEW
-  selfDeaf?: boolean;                // NEW
+  connectionState?: ConnectionState; // NEW
+  selfMute?: boolean; // NEW
+  selfDeaf?: boolean; // NEW
 }
 
 export interface AudioBuffer {
@@ -204,44 +208,44 @@ export interface AudioBuffer {
  */
 export interface AudioStreamConfig {
   // Audio parameters
-  sampleRate: number;              // 48000 Hz (required)
-  channels: number;                // 2 (stereo) or 1 (mono)
-  frameSize: number;               // 960 samples per frame (20ms @ 48kHz)
-  bitRate: number;                 // 128000 (128 kbps, default)
+  sampleRate: number; // 48000 Hz (required)
+  channels: number; // 2 (stereo) or 1 (mono)
+  frameSize: number; // 960 samples per frame (20ms @ 48kHz)
+  bitRate: number; // 128000 (128 kbps, default)
 
   // Buffer configuration
-  jitterBufferSize: number;         // 5-20 frames
-  circularBufferCapacity: number;   // 100 frames (max storage)
-  targetBufferLatency: number;      // ms, default 40
+  jitterBufferSize: number; // 5-20 frames
+  circularBufferCapacity: number; // 100 frames (max storage)
+  targetBufferLatency: number; // ms, default 40
 
   // Codec settings
-  opusComplexity: number;           // 0-10, default 5
-  useFEC: boolean;                  // Forward Error Correction
-  useDTX: boolean;                  // Discontinuous Transmission
-  maxPlaybackRate: number;          // 48000 (Hz)
+  opusComplexity: number; // 0-10, default 5
+  useFEC: boolean; // Forward Error Correction
+  useDTX: boolean; // Discontinuous Transmission
+  maxPlaybackRate: number; // 48000 (Hz)
 
   // Device configuration
-  inputDeviceId?: string;           // Audio input device
-  outputDeviceId?: string;          // Audio output device
-  echoCancel?: boolean;             // Echo cancellation
-  noiseSuppression?: boolean;       // Noise suppression
+  inputDeviceId?: string; // Audio input device
+  outputDeviceId?: string; // Audio output device
+  echoCancel?: boolean; // Echo cancellation
+  noiseSuppression?: boolean; // Noise suppression
 
   // Error handling
-  maxRetries: number;               // Default 3
-  timeoutMs: number;                // Default 5000
-  enableMetrics: boolean;           // Track latency, quality
+  maxRetries: number; // Default 3
+  timeoutMs: number; // Default 5000
+  enableMetrics: boolean; // Track latency, quality
 }
 
 /**
  * Audio Frame (input/output)
  */
 export interface AudioFrame {
-  timestamp: number;                // RTP sample timestamp (not milliseconds)
-  sequenceNumber: number;           // Frame counter
-  ssrc: number;                     // Synchronization source (RTP)
-  data: Float32Array;               // PCM audio data (48kHz, stereo)
-  sampleCount: number;              // 960 samples typical
-  duration: number;                 // 20 ms typical
+  timestamp: number; // RTP sample timestamp (not milliseconds)
+  sequenceNumber: number; // Frame counter
+  ssrc: number; // Synchronization source (RTP)
+  data: Float32Array; // PCM audio data (48kHz, stereo)
+  sampleCount: number; // 960 samples typical
+  duration: number; // 20 ms typical
 }
 
 /**
@@ -251,8 +255,8 @@ export interface OpusFrame {
   timestamp: number;
   sequenceNumber: number;
   ssrc: number;
-  data: Uint8Array;                 // Opus-encoded bytes
-  size: number;                     // Byte length
+  data: Uint8Array; // Opus-encoded bytes
+  size: number; // Byte length
 }
 
 /**
@@ -260,8 +264,8 @@ export interface OpusFrame {
  */
 export interface JitterBufferFrame {
   frame: AudioFrame;
-  arrivalTime: number;              // When frame arrived
-  playoutTime: number;              // When to play
+  arrivalTime: number; // When frame arrived
+  playoutTime: number; // When to play
   isPlayed: boolean;
 }
 
@@ -273,27 +277,27 @@ export interface AudioStreamStats {
   framesEncoded: number;
   framesDecoded: number;
   framesDropped: number;
-  frameLoss: number;                // Percentage
-  jitterMs: number;                 // Buffer jitter
-  latencyMs: number;                // End-to-end
-  bufferOccupancy: number;          // Frames in buffer
-  captureUnderrun: number;          // Underrun events
-  playbackUnderrun: number;         // Underrun events
-  cpuUsage: number;                 // Estimated %
-  codecQuality: number;             // 0-100
+  frameLoss: number; // Percentage
+  jitterMs: number; // Buffer jitter
+  latencyMs: number; // End-to-end
+  bufferOccupancy: number; // Frames in buffer
+  captureUnderrun: number; // Underrun events
+  playbackUnderrun: number; // Underrun events
+  cpuUsage: number; // Estimated %
+  codecQuality: number; // 0-100
 }
 
 /**
  * Buffer health status
  */
 export interface BufferHealth {
-  occupancy: number;                // Current frame count
-  capacity: number;                 // Max capacity
-  percentFull: number;              // 0-100
-  isUnderrun: boolean;              // < 2 frames
-  isOverrun: boolean;               // > 90% full
-  jitter: number;                   // ms
-  recommendation: string;           // "optimal" | "low" | "high" | "critical"
+  occupancy: number; // Current frame count
+  capacity: number; // Max capacity
+  percentFull: number; // 0-100
+  isUnderrun: boolean; // < 2 frames
+  isOverrun: boolean; // > 90% full
+  jitter: number; // ms
+  recommendation: string; // "optimal" | "low" | "high" | "critical"
 }
 
 /**

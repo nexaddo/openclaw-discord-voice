@@ -31,19 +31,19 @@ export interface VoiceCommandPipelineConfig {
   ttsConfig: TTSConfig;
 
   // Pipeline settings
-  maxConcurrentConnections: number;    // Default: 10
-  sessionTimeoutMs: number;            // Default: 300000 (5 min)
-  enableFallbackResponses: boolean;    // Default: true
-  enableMetrics: boolean;              // Default: true
+  maxConcurrentConnections: number; // Default: 10
+  sessionTimeoutMs: number; // Default: 300000 (5 min)
+  enableFallbackResponses: boolean; // Default: true
+  enableMetrics: boolean; // Default: true
 
   // Agent integration
-  agentEndpoint?: string;              // Optional agent API endpoint
-  agentTimeoutMs?: number;              // Default: 30000
-  agentApiKey?: string;                 // Optional agent API key
+  agentEndpoint?: string; // Optional agent API endpoint
+  agentTimeoutMs?: number; // Default: 30000
+  agentApiKey?: string; // Optional agent API key
 
   // Error recovery
-  enableErrorRecovery: boolean;         // Default: true
-  maxRecoveryAttempts: number;          // Default: 3
+  enableErrorRecovery: boolean; // Default: true
+  maxRecoveryAttempts: number; // Default: 3
 }
 
 /**
@@ -134,9 +134,13 @@ export interface PipelineEvents {
 
 export class VoiceCommandPipeline {
   private config: VoiceCommandPipelineConfig;
+
   private sessions: Map<string, VoiceSession> = new Map();
+
   private activeRequests: Map<string, VoiceRequest> = new Map();
+
   private eventListeners: Map<keyof PipelineEvents, Function[]> = new Map();
+
   private metrics: PipelineMetrics & {
     totalRecoveryAttempts?: number;
     successfulRecoveries?: number;
@@ -152,13 +156,16 @@ export class VoiceCommandPipeline {
     totalRecoveryAttempts: 0,
     successfulRecoveries: 0,
   };
+
   private errorRecoveryHandler: ErrorRecoveryHandler;
+
   private isInitialized: boolean = false;
 
   // Component instances
   private sttInstance?: SpeechToText;
+
   private ttsInstance?: TextToSpeech;
-  
+
   // Cleanup interval storage
   private cleanupInterval?: NodeJS.Timer;
 
@@ -185,10 +192,7 @@ export class VoiceCommandPipeline {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      throw new PipelineError(
-        PipelineErrorCode.PIPELINE_INVALID_STATE,
-        'Pipeline already initialized'
-      );
+      throw new PipelineError(PipelineErrorCode.PIPELINE_INVALID_STATE, 'Pipeline already initialized');
     }
 
     try {
@@ -200,14 +204,14 @@ export class VoiceCommandPipeline {
       this.ttsInstance = new TextToSpeech(this.config.ttsConfig);
 
       this.isInitialized = true;
-      
+
       // Start session cleanup after initialization
       this.startSessionCleanup();
     } catch (error: any) {
       throw new PipelineError(
         PipelineErrorCode.PIPELINE_INITIALIZATION_FAILED,
         `Failed to initialize pipeline: ${error.message}`,
-        { originalError: error }
+        { originalError: error },
       );
     }
   }
@@ -245,7 +249,7 @@ export class VoiceCommandPipeline {
     userId: string,
     guildId: string,
     channelId: string,
-    audioHandler?: AudioStreamHandler
+    audioHandler?: AudioStreamHandler,
   ): Promise<string> {
     this.ensureInitialized();
 
@@ -255,7 +259,7 @@ export class VoiceCommandPipeline {
       throw new PipelineError(
         PipelineErrorCode.PIPELINE_CONCURRENT_LIMIT,
         `Maximum concurrent connections (${this.config.maxConcurrentConnections}) exceeded`,
-        { userId, guildId, channelId }
+        { userId, guildId, channelId },
       );
     }
 
@@ -320,26 +324,21 @@ export class VoiceCommandPipeline {
   /**
    * Process voice command from audio frames
    */
-  async processVoiceCommand(
-    sessionId: string,
-    audioFrames: AudioFrame[]
-  ): Promise<string> {
+  async processVoiceCommand(sessionId: string, audioFrames: AudioFrame[]): Promise<string> {
     this.ensureInitialized();
 
     const session = this.sessions.get(sessionId);
     if (!session) {
-      throw new PipelineError(
-        PipelineErrorCode.PIPELINE_INVALID_STATE,
-        `Session ${sessionId} not found`,
-        { sessionId }
-      );
+      throw new PipelineError(PipelineErrorCode.PIPELINE_INVALID_STATE, `Session ${sessionId} not found`, {
+        sessionId,
+      });
     }
 
     if (session.status !== 'active') {
       throw new PipelineError(
         PipelineErrorCode.PIPELINE_INVALID_STATE,
         `Session ${sessionId} is not active (status: ${session.status})`,
-        { sessionId, status: session.status }
+        { sessionId, status: session.status },
       );
     }
 
@@ -387,21 +386,17 @@ export class VoiceCommandPipeline {
 
       this.emit('requestCompleted', request);
       return requestId;
-
     } catch (error: any) {
       request.status = 'error';
-      const pipelineError = error instanceof PipelineError
-        ? error
-        : new PipelineError(
-            PipelineErrorCode.UNKNOWN_ERROR,
-            error.message,
-            {
+      const pipelineError =
+        error instanceof PipelineError
+          ? error
+          : new PipelineError(PipelineErrorCode.UNKNOWN_ERROR, error.message, {
               sessionId,
               userId: session.userId,
               phase: 'pipeline',
               originalError: error,
-            }
-          );
+            });
 
       request.error = pipelineError;
       session.metrics.totalRequests++;
@@ -429,11 +424,10 @@ export class VoiceCommandPipeline {
     if (!request) return;
 
     request.status = 'error';
-    request.error = new PipelineError(
-      PipelineErrorCode.PIPELINE_CANCELLED,
-      `Request cancelled: ${reason}`,
-      { sessionId: request.sessionId, requestId }
-    );
+    request.error = new PipelineError(PipelineErrorCode.PIPELINE_CANCELLED, `Request cancelled: ${reason}`, {
+      sessionId: request.sessionId,
+      requestId,
+    });
 
     this.activeRequests.delete(requestId);
   }
@@ -449,7 +443,7 @@ export class VoiceCommandPipeline {
    * Get all active sessions
    */
   getActiveSessions(): VoiceSession[] {
-    return Array.from(this.sessions.values()).filter(s => s.status === 'active');
+    return Array.from(this.sessions.values()).filter((s) => s.status === 'active');
   }
 
   /**
@@ -500,7 +494,7 @@ export class VoiceCommandPipeline {
     if (!this.isInitialized) {
       throw new PipelineError(
         PipelineErrorCode.PIPELINE_INVALID_STATE,
-        'Pipeline not initialized. Call initialize() first.'
+        'Pipeline not initialized. Call initialize() first.',
       );
     }
   }
@@ -522,15 +516,9 @@ export class VoiceCommandPipeline {
   /**
    * Transcribe audio frames to text
    */
-  private async transcribeAudio(
-    audioFrames: AudioFrame[],
-    session: VoiceSession
-  ): Promise<TranscriptionResult> {
+  private async transcribeAudio(audioFrames: AudioFrame[], session: VoiceSession): Promise<TranscriptionResult> {
     if (!this.sttInstance) {
-      throw new PipelineError(
-        PipelineErrorCode.STT_INITIALIZATION_FAILED,
-        'STT instance not available'
-      );
+      throw new PipelineError(PipelineErrorCode.STT_INITIALIZATION_FAILED, 'STT instance not available');
     }
 
     const startTime = Date.now();
@@ -544,21 +532,16 @@ export class VoiceCommandPipeline {
 
       // Update metrics
       const latency = Date.now() - startTime;
-      session.metrics.avgTranscriptionLatency =
-        (session.metrics.avgTranscriptionLatency + latency) / 2;
+      session.metrics.avgTranscriptionLatency = (session.metrics.avgTranscriptionLatency + latency) / 2;
 
       return result;
     } catch (error: any) {
-      throw new PipelineError(
-        PipelineErrorCode.STT_TRANSCRIPTION_FAILED,
-        `Transcription failed: ${error.message}`,
-        {
-          sessionId: session.sessionId,
-          userId: session.userId,
-          phase: 'stt',
-          originalError: error,
-        }
-      );
+      throw new PipelineError(PipelineErrorCode.STT_TRANSCRIPTION_FAILED, `Transcription failed: ${error.message}`, {
+        sessionId: session.sessionId,
+        userId: session.userId,
+        phase: 'stt',
+        originalError: error,
+      });
     }
   }
 
@@ -571,7 +554,7 @@ export class VoiceCommandPipeline {
     try {
       // Use real agent if endpoint is configured
       let response: AgentResponse;
-      
+
       if (this.config.agentEndpoint && this.config.agentApiKey) {
         // Real HTTP agent integration
         response = await this.callRealAgent(text, session);
@@ -582,22 +565,17 @@ export class VoiceCommandPipeline {
 
       // Update metrics
       const latency = Date.now() - startTime;
-      session.metrics.avgAgentLatency =
-        (session.metrics.avgAgentLatency + latency) / 2;
+      session.metrics.avgAgentLatency = (session.metrics.avgAgentLatency + latency) / 2;
 
       return response;
     } catch (error: any) {
-      throw new PipelineError(
-        PipelineErrorCode.AGENT_REQUEST_FAILED,
-        `Agent request failed: ${error.message}`,
-        {
-          sessionId: session.sessionId,
-          userId: session.userId,
-          phase: 'agent',
-          textLength: text.length,
-          originalError: error,
-        }
-      );
+      throw new PipelineError(PipelineErrorCode.AGENT_REQUEST_FAILED, `Agent request failed: ${error.message}`, {
+        sessionId: session.sessionId,
+        userId: session.userId,
+        phase: 'agent',
+        textLength: text.length,
+        originalError: error,
+      });
     }
   }
 
@@ -618,7 +596,7 @@ export class VoiceCommandPipeline {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.agentApiKey}`,
+          Authorization: `Bearer ${this.config.agentApiKey}`,
         },
         body: JSON.stringify({
           text,
@@ -657,10 +635,7 @@ export class VoiceCommandPipeline {
    */
   private async synthesizeSpeech(text: string, session: VoiceSession): Promise<TTSResponse> {
     if (!this.ttsInstance) {
-      throw new PipelineError(
-        PipelineErrorCode.TTS_INITIALIZATION_FAILED,
-        'TTS instance not available'
-      );
+      throw new PipelineError(PipelineErrorCode.TTS_INITIALIZATION_FAILED, 'TTS instance not available');
     }
 
     const startTime = Date.now();
@@ -671,22 +646,17 @@ export class VoiceCommandPipeline {
 
       // Update metrics
       const latency = Date.now() - startTime;
-      session.metrics.avgTtsLatency =
-        (session.metrics.avgTtsLatency + latency) / 2;
+      session.metrics.avgTtsLatency = (session.metrics.avgTtsLatency + latency) / 2;
 
       return response;
     } catch (error: any) {
-      throw new PipelineError(
-        PipelineErrorCode.TTS_SYNTHESIS_FAILED,
-        `Speech synthesis failed: ${error.message}`,
-        {
-          sessionId: session.sessionId,
-          userId: session.userId,
-          phase: 'tts',
-          textLength: text.length,
-          originalError: error,
-        }
-      );
+      throw new PipelineError(PipelineErrorCode.TTS_SYNTHESIS_FAILED, `Speech synthesis failed: ${error.message}`, {
+        sessionId: session.sessionId,
+        userId: session.userId,
+        phase: 'tts',
+        textLength: text.length,
+        originalError: error,
+      });
     }
   }
 
@@ -717,27 +687,19 @@ export class VoiceCommandPipeline {
       // Play frame
       await session.audioHandler.playFrame(frame);
     } catch (error: any) {
-      throw new PipelineError(
-        PipelineErrorCode.AUDIO_DECODING_FAILED,
-        `Audio playback failed: ${error.message}`,
-        {
-          sessionId: session.sessionId,
-          userId: session.userId,
-          phase: 'audio',
-          originalError: error,
-        }
-      );
+      throw new PipelineError(PipelineErrorCode.AUDIO_DECODING_FAILED, `Audio playback failed: ${error.message}`, {
+        sessionId: session.sessionId,
+        userId: session.userId,
+        phase: 'audio',
+        originalError: error,
+      });
     }
   }
 
   /**
    * Attempt error recovery
    */
-  private async attemptRecovery(
-    error: PipelineError,
-    request: VoiceRequest,
-    session: VoiceSession
-  ): Promise<boolean> {
+  private async attemptRecovery(error: PipelineError, request: VoiceRequest, session: VoiceSession): Promise<boolean> {
     if (!error.shouldUseFallback()) {
       return false;
     }
@@ -750,7 +712,7 @@ export class VoiceCommandPipeline {
       if (!this.metrics.successfulRecoveries) {
         this.metrics.successfulRecoveries = 0;
       }
-      
+
       this.metrics.totalRecoveryAttempts++;
 
       // Try fallback response
@@ -761,9 +723,9 @@ export class VoiceCommandPipeline {
 
         // Mark recovery as successful
         this.metrics.successfulRecoveries++;
-        
+
         // Calculate correct recovery rate: successes / attempts
-        this.metrics.recoverySuccessRate = 
+        this.metrics.recoverySuccessRate =
           this.metrics.successfulRecoveries / Math.max(1, this.metrics.totalRecoveryAttempts);
 
         return true;
@@ -787,7 +749,7 @@ export class VoiceCommandPipeline {
       case PipelineErrorCode.TTS_SYNTHESIS_FAILED:
         return "I can't respond right now, but I'm here.";
       default:
-        return "Sorry, there was an issue. Please try again.";
+        return 'Sorry, there was an issue. Please try again.';
     }
   }
 
@@ -833,15 +795,15 @@ export class VoiceCommandPipeline {
    */
   private async mockAgentCall(text: string, session: VoiceSession): Promise<AgentResponse> {
     // Simulate agent processing time
-    await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+    await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 200));
 
     // Mock responses based on input
-    let response = "I understand you said: " + text;
+    let response = `I understand you said: ${  text}`;
 
     if (text.toLowerCase().includes('hello')) {
-      response = "Hello! How can I help you today?";
+      response = 'Hello! How can I help you today?';
     } else if (text.toLowerCase().includes('time')) {
-      response = "The current time is " + new Date().toLocaleTimeString();
+      response = `The current time is ${  new Date().toLocaleTimeString()}`;
     } else if (text.toLowerCase().includes('weather')) {
       response = "I'm sorry, I don't have access to weather information right now.";
     }

@@ -12,6 +12,7 @@
 Phase 6 Voice Command Pipeline implementation **CANNOT START** because Phase 4 and Phase 5 implementations do not exist and have not been merged to main.
 
 **Directive Constraint (from task spec):**
+
 > **IMPORTANT:** Wait for Phase 4 + Phase 5 to be merged before starting integration.
 
 **Current State:** Phase 4 & 5 are not merged to main. Implementation is blocked.
@@ -30,16 +31,16 @@ Latest Commit: b8994c8 (Phase 6 blocker report)
 
 ### Phase Completion Status
 
-| Phase | Component | Status | Merged | Tests | Notes |
-|-------|-----------|--------|--------|-------|-------|
-| 1 | Dependencies & Foundation | ✅ Complete | ✅ main | — | Initial setup |
-| 2 | Voice Connection Manager | ✅ Complete | ✅ main | 40 | Commit: 1b6dcb5 |
-| 3 | Audio Stream Handler | ✅ Complete | ✅ main | 48 | Commit: db2a0e4 |
-| **4** | **Speech-to-Text (STT)** | ❌ **NOT STARTED** | ❌ | — | **BLOCKER** |
-| **5** | **Text-to-Speech (TTS)** | ❌ **NOT STARTED** | ❌ | — | **BLOCKER** |
-| 6 | Voice Command Pipeline | ⏳ WAITING | — | 25+ (pending) | Awaiting Phase 4 & 5 |
-| 7 | Discord Commands | ⏳ WAITING | — | 40 (pending) | After Phase 6 |
-| 8 | CI/CD & Deployment | 🔄 PARTIAL | Partial | — | Workflows added |
+| Phase | Component                 | Status             | Merged  | Tests         | Notes                |
+| ----- | ------------------------- | ------------------ | ------- | ------------- | -------------------- |
+| 1     | Dependencies & Foundation | ✅ Complete        | ✅ main | —             | Initial setup        |
+| 2     | Voice Connection Manager  | ✅ Complete        | ✅ main | 40            | Commit: 1b6dcb5      |
+| 3     | Audio Stream Handler      | ✅ Complete        | ✅ main | 48            | Commit: db2a0e4      |
+| **4** | **Speech-to-Text (STT)**  | ❌ **NOT STARTED** | ❌      | —             | **BLOCKER**          |
+| **5** | **Text-to-Speech (TTS)**  | ❌ **NOT STARTED** | ❌      | —             | **BLOCKER**          |
+| 6     | Voice Command Pipeline    | ⏳ WAITING         | —       | 25+ (pending) | Awaiting Phase 4 & 5 |
+| 7     | Discord Commands          | ⏳ WAITING         | —       | 40 (pending)  | After Phase 6        |
+| 8     | CI/CD & Deployment        | 🔄 PARTIAL         | Partial | —             | Workflows added      |
 
 ### What Phase 6 Needs to Proceed
 
@@ -58,6 +59,7 @@ Latest Commit: b8994c8 (Phase 6 blocker report)
    - ❌ No local model implementation
 
 **What Phase 6 Cannot Do Without These:**
+
 - Cannot create `VoiceCommandPipeline.ts` (requires Phase 4 → Phase 5 chain)
 - Cannot implement integration tests (no modules to integrate)
 - Cannot wire STT → Intent Parser → Agent → TTS flow
@@ -68,9 +70,11 @@ Latest Commit: b8994c8 (Phase 6 blocker report)
 ## Critical Constraints Noted
 
 From Phase 6 task specification:
+
 > **Model constraint:** Use ONLY local models (Phi-3 Mini, Gemma3, Qwen2.5, TinyLlama). NO cloud APIs.
 
 **Implication for Phase 4 & 5:**
+
 - ❌ Cannot use Whisper API (mentioned in roadmap)
 - ❌ Cannot use ElevenLabs API (mentioned in roadmap)
 - ✅ Must use local STT (Faster-Whisper, Vosk, etc.)
@@ -83,15 +87,18 @@ From Phase 6 task specification:
 ## Artifacts Created
 
 ✅ **Blocker Report Document**
+
 - File: `.agents/PHASE6_BLOCKER_REPORT.md`
 - Content: Detailed blocker analysis with mitigation steps
 - Commit: `b8994c8`
 
 ✅ **Status Tracking**
+
 - File: `memory/phase6-status.md`
 - Purpose: Quick reference for conductor
 
 ✅ **Investigation Results**
+
 - This report: `.agents/PHASE6_FINAL_REPORT.md`
 
 ---
@@ -99,6 +106,7 @@ From Phase 6 task specification:
 ## Timeline Impact
 
 **Per IMPLEMENTATION_ROADMAP.md:**
+
 - Phase 4 (STT): Wed, Feb 12 — 8 hours
 - Phase 5 (TTS): Thu, Feb 13 — 8 hours
 - Phase 6 (Pipeline): Fri, Feb 14 — 8 hours (BLOCKED until Phase 4 & 5 merge)
@@ -112,6 +120,7 @@ From Phase 6 task specification:
 ## Recommendations for Conductor
 
 ### Immediate Actions
+
 1. **Spawn Phase 4 Implementation Agent**
    - Task: Build SpeechToText module
    - Requirements: 32 test cases, local model, Voice Activity Detection
@@ -125,6 +134,7 @@ From Phase 6 task specification:
    - ETA: 8 hours (Thu, Feb 13 per roadmap)
 
 ### Before Phase 4/5 Agents Start
+
 - [ ] Clarify tech stack for local models
   - Phase 4: Recommend Faster-Whisper or Vosk for STT
   - Phase 5: Recommend Coqui TTS or Piper TTS for TTS
@@ -132,6 +142,7 @@ From Phase 6 task specification:
 - [ ] Ensure agents understand local-only constraint
 
 ### Phase 6 Activation (When Unblocked)
+
 - Once Phase 4 & 5 are merged to main:
   1. Spawn Phase 6 agent (same as current session)
   2. Implement VoiceCommandPipeline with 25+ tests
@@ -144,6 +155,7 @@ From Phase 6 task specification:
 ## What Phase 6 Will Deliver (When Ready)
 
 ### Implementation Components
+
 1. **VoiceCommandPipeline Class** (`src/VoiceCommandPipeline.ts`)
    - Orchestrates: Audio input → STT → Intent parsing → Agent → TTS → Audio output
    - Manages concurrent user sessions
@@ -162,6 +174,7 @@ From Phase 6 task specification:
    - Agent invocation: Rue agent for command handling
 
 ### PR Details
+
 - **Branch:** `phase6-command-pipeline`
 - **Target:** main (but don't merge, await approval)
 - **Tests:** 25+, all passing
@@ -172,6 +185,7 @@ From Phase 6 task specification:
 ## Prevention of Future Blocks
 
 ### Process Improvements
+
 1. **Dependency Mapping:** Create phase dependency diagram upfront
 2. **Critical Path Tracking:** Daily status on blocking phases
 3. **Parallel Readiness:** Have Phase 4 & 5 agents ready before Phase 6 agent starts
@@ -181,16 +195,16 @@ From Phase 6 task specification:
 
 ## Summary Table
 
-| Metric | Value |
-|--------|-------|
-| **Status** | 🚫 BLOCKED |
-| **Blocker Type** | Missing Phase 4 & Phase 5 implementations |
-| **Time to Unblock** | ~16 hours (Phase 4 + Phase 5) |
-| **Estimated Unblock Date** | Thu, Feb 13 EOD |
-| **Phase 6 Readiness** | Can start Fri, Feb 14 |
-| **Tests Pending** | 25+ (Phase 6 TDD) |
-| **Commits Made** | 1 (blocker report) |
-| **PRs Created** | 0 (cannot proceed) |
+| Metric                     | Value                                     |
+| -------------------------- | ----------------------------------------- |
+| **Status**                 | 🚫 BLOCKED                                |
+| **Blocker Type**           | Missing Phase 4 & Phase 5 implementations |
+| **Time to Unblock**        | ~16 hours (Phase 4 + Phase 5)             |
+| **Estimated Unblock Date** | Thu, Feb 13 EOD                           |
+| **Phase 6 Readiness**      | Can start Fri, Feb 14                     |
+| **Tests Pending**          | 25+ (Phase 6 TDD)                         |
+| **Commits Made**           | 1 (blocker report)                        |
+| **PRs Created**            | 0 (cannot proceed)                        |
 
 ---
 

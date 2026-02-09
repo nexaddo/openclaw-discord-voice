@@ -25,6 +25,7 @@
 ## Overview
 
 Phase 8 transforms the Discord Voice Integration from a working project into a **production-grade system** with:
+
 - Automated testing on every commit
 - Continuous building and packaging
 - Automated deployment pipelines
@@ -33,9 +34,11 @@ Phase 8 transforms the Discord Voice Integration from a working project into a *
 - Complete documentation
 
 ### Key Principle
+
 > **Automation first.** Every manual step is a liability. Automate or don't deploy.
 
 ### Goals
+
 1. ✅ Zero-touch deployment pipeline
 2. ✅ All 180+ tests automated
 3. ✅ Semantic versioning (auto-bumped)
@@ -68,30 +71,30 @@ jobs:
     strategy:
       matrix:
         node-version: [18.x, 20.x]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      
+
       - name: Install Dependencies
         run: npm ci
-      
+
       - name: Run Linter
         run: npm run lint
-      
+
       - name: Run Type Check
         run: npm run type-check
-      
+
       - name: Run Tests
         run: npm test
         env:
           NODE_ENV: test
-      
+
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
         with:
@@ -99,7 +102,7 @@ jobs:
           fail_ci_if_error: true
           flags: unittests
           verbose: true
-      
+
       - name: Comment PR with Coverage
         if: github.event_name == 'pull_request'
         uses: romeovs/lcov-reporter-action@v0.3.1
@@ -109,10 +112,12 @@ jobs:
 ```
 
 **Triggers:**
+
 - Every push to `main` or `dev`
 - Every PR targeting `main` or `dev`
 
 **What it does:**
+
 - Tests on Node 18.x and 20.x
 - Runs linter (ESLint)
 - Type checking (TypeScript)
@@ -121,6 +126,7 @@ jobs:
 - PR comments with coverage delta
 
 **Success Criteria:**
+
 - All tests pass
 - Code coverage >85%
 - No linting errors
@@ -145,54 +151,54 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for versioning
-      
+          fetch-depth: 0 # Full history for versioning
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           cache: 'npm'
-      
+
       - name: Install Dependencies
         run: npm ci
-      
+
       - name: Run Tests (Pre-Build)
         run: npm test
-      
+
       - name: Build
         run: npm run build
-      
+
       - name: Generate Changelog
         id: changelog
         uses: scottbrenner/generate-changelog-action@master
         with:
           file: CHANGELOG.md
           exclude-merge-commits: true
-      
+
       - name: Bump Version
         id: version
         uses: phips28/gh-action-bump-version@master
         with:
-          version-type: minor  # Or use 'patch' for hotfixes
+          version-type: minor # Or use 'patch' for hotfixes
           github-token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'ci: bump version to {{version}}'
-      
+
       - name: Build Docker Image
         run: |
           docker build -t openclaw-discord-voice:${{ steps.version.outputs.version }} .
           docker build -t openclaw-discord-voice:latest .
-      
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
           path: dist/
           retention-days: 30
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -203,7 +209,7 @@ jobs:
             CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Publish to npm (if applicable)
         if: startsWith(github.ref, 'refs/tags/')
         run: npm publish
@@ -214,7 +220,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: success()
-    
+
     steps:
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.24
@@ -235,9 +241,11 @@ jobs:
 ```
 
 **Triggers:**
+
 - Successful push to `main` branch only
 
 **What it does:**
+
 - Runs full test suite
 - Compiles TypeScript → JavaScript
 - Generates changelog from commits
@@ -249,6 +257,7 @@ jobs:
 - Notifies Slack/Discord
 
 **Outputs:**
+
 - Docker image: `openclaw-discord-voice:v1.2.3`
 - GitHub release with artifacts
 - Version bump in package.json
@@ -266,26 +275,26 @@ on:
   workflow_run:
     workflows: [Build & Publish]
     types: [completed]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch: # Manual trigger
 
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     environment: staging
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           cache: 'npm'
-      
+
       - name: Install Dependencies
         run: npm ci --production
-      
+
       - name: Load Environment (Staging)
         run: |
           cat > .env.staging << EOF
@@ -296,7 +305,7 @@ jobs:
           LOG_LEVEL=info
           ENVIRONMENT=staging
           EOF
-      
+
       - name: Deploy to Staging Server
         uses: appleboy/ssh-action@master
         with:
@@ -311,12 +320,12 @@ jobs:
             systemctl restart discord-voice-staging
             sleep 5
             curl http://localhost:3001/health || exit 1
-      
+
       - name: Verify Deployment
         run: |
           # Check staging bot is responding
           curl -f http://${{ secrets.STAGING_HOST }}:3001/health || exit 1
-      
+
       - name: Notify Success
         uses: slackapi/slack-github-action@v1.24
         with:
@@ -333,7 +342,7 @@ jobs:
                 }
               ]
             }
-      
+
       - name: Notify Failure
         if: failure()
         uses: slackapi/slack-github-action@v1.24
@@ -369,25 +378,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Confirm Deployment
         run: |
           echo "⚠️  PRODUCTION DEPLOYMENT"
           echo "Deploying commit: ${{ github.sha }}"
           echo "Approver: ${{ github.actor }}"
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           cache: 'npm'
-      
+
       - name: Install Dependencies
         run: npm ci --production
-      
+
       - name: Load Environment (Production)
         run: |
           cat > .env.prod << EOF
@@ -399,7 +408,7 @@ jobs:
           ENVIRONMENT=production
           SENTRY_DSN=${{ secrets.SENTRY_DSN }}
           EOF
-      
+
       - name: Deploy with Rollback Support
         uses: appleboy/ssh-action@master
         with:
@@ -408,21 +417,21 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/openclaw-discord-voice
-            
+
             # Backup current version
             cp -r dist/ dist.backup-$(date +%s)/
-            
+
             # Deploy new version
             git pull origin main
             npm ci --production
             npm run build
-            
+
             # Graceful restart with health check
             systemctl stop discord-voice-prod
             sleep 2
             systemctl start discord-voice-prod
             sleep 5
-            
+
             # Health check - if fails, rollback
             if ! curl -f http://localhost:3001/health; then
               echo "Health check FAILED - rolling back"
@@ -433,12 +442,12 @@ jobs:
               systemctl start discord-voice-prod
               exit 1
             fi
-      
+
       - name: Verify Production
         run: |
           curl -f http://${{ secrets.PROD_HOST }}:3001/health || exit 1
           curl -f http://${{ secrets.PROD_HOST }}:3001/metrics || exit 1
-      
+
       - name: Post Deployment
         uses: slackapi/slack-github-action@v1.24
         with:
@@ -471,6 +480,7 @@ jobs:
 ```
 
 **Key Features:**
+
 - Manual trigger (button push in GitHub)
 - Automatic health check
 - Automatic rollback on failure
@@ -498,12 +508,14 @@ jobs:
 ### Step 3: Configure OAuth2 Scopes
 
 Under OAuth2 → Scopes, select:
+
 - `bot` — Required for bot functionality
 - `applications.commands` — For slash commands
 
 ### Step 4: Configure Permissions
 
 Under OAuth2 → Bot Permissions, select:
+
 - `Connect` (voice channel access)
 - `Speak` (voice channel output)
 - `Use Voice Activity` (voice activity detection)
@@ -516,6 +528,7 @@ Under OAuth2 → Bot Permissions, select:
 ### Step 5: Generate Invite URL
 
 Under OAuth2 → Generated URL (with above scopes and permissions):
+
 ```
 https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=370688&scope=bot%20applications.commands
 ```
@@ -534,11 +547,11 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN!
 async function registerCommands() {
   try {
     console.log('Registering slash commands...');
-    
+
     await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!), {
-      body: commands.map(cmd => cmd.data.toJSON()),
+      body: commands.map((cmd) => cmd.data.toJSON()),
     });
-    
+
     console.log('✅ Commands registered successfully');
   } catch (error) {
     console.error('❌ Failed to register commands:', error);
@@ -550,6 +563,7 @@ registerCommands();
 ```
 
 **Add to GitHub Actions (pre-deployment):**
+
 ```yaml
 - name: Register Discord Commands
   run: npm run register-commands
@@ -600,6 +614,7 @@ Create `discord-app-manifest.json`:
 ## Deployment Architecture
 
 ### Development Environment
+
 ```
 Local Dev Machine
 ├── Node.js runtime
@@ -609,6 +624,7 @@ Local Dev Machine
 ```
 
 ### Staging Environment
+
 ```
 Staging Server (AWS EC2 / DigitalOcean)
 ├── Node.js 20.x
@@ -622,6 +638,7 @@ Staging Server (AWS EC2 / DigitalOcean)
 ```
 
 ### Production Environment
+
 ```
 Production Server (AWS EC2 / DigitalOcean)
 ├── Node.js 20.x
@@ -688,7 +705,7 @@ services:
     container_name: openclaw-discord-voice
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
@@ -700,7 +717,7 @@ services:
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -716,11 +733,13 @@ services:
 Set these in `Settings → Secrets and variables → Actions`:
 
 **Development Secrets:**
+
 ```
 DISCORD_BOT_TOKEN_DEV=<test-bot-token>
 ```
 
 **Staging Secrets:**
+
 ```
 DISCORD_BOT_TOKEN_STAGING=<staging-bot-token>
 STAGING_HOST=<staging-server-ip>
@@ -729,6 +748,7 @@ STAGING_SSH_KEY=<private-key>
 ```
 
 **Production Secrets:**
+
 ```
 DISCORD_BOT_TOKEN_PROD=<production-bot-token>
 PROD_HOST=<production-server-ip>
@@ -738,6 +758,7 @@ SENTRY_DSN=<sentry-url>
 ```
 
 **Shared Secrets:**
+
 ```
 OPENAI_API_KEY=<actual-key>
 ELEVENLABS_API_KEY=<actual-key>
@@ -747,6 +768,7 @@ NPM_TOKEN=<npm-publish-token>
 ### Environment Files
 
 `.env.example` (commit to repo):
+
 ```
 # Discord
 DISCORD_BOT_TOKEN=your-bot-token-here
@@ -766,6 +788,7 @@ SENTRY_DSN=https://...@sentry.io/...
 ```
 
 `.env.production` (never commit):
+
 ```
 NODE_ENV=production
 LOG_LEVEL=warn
@@ -793,6 +816,7 @@ MAJOR.MINOR.PATCH
 ```
 
 **Rules:**
+
 - **MAJOR** (1.0.0 → 2.0.0): Breaking changes
 - **MINOR** (1.0.0 → 1.1.0): New features (default)
 - **PATCH** (1.0.0 → 1.0.1): Bug fixes, hotfixes
@@ -800,6 +824,7 @@ MAJOR.MINOR.PATCH
 ### Commit Messages
 
 Use conventional commits:
+
 ```
 feat: add voice activity detection
 fix: correct audio buffer overflow
@@ -817,18 +842,22 @@ Commits are parsed and grouped:
 ## [1.2.0] - 2026-02-20
 
 ### Features
+
 - Add voice activity detection
 - Implement graceful shutdown
 
 ### Bug Fixes
+
 - Fix audio buffer overflow in Phase 3
 - Correct connection state tracking
 
 ### Documentation
+
 - Update deployment guide
 - Add troubleshooting section
 
 ### Internal
+
 - Refactor pipeline error handling
 - Update test infrastructure
 ```
@@ -860,6 +889,7 @@ Commits are parsed and grouped:
 ### Deployment Steps
 
 1. **Trigger Deployment**
+
    ```bash
    # GitHub Actions UI → Deploy to Production → Run Workflow
    # Or via CLI:
@@ -873,11 +903,12 @@ Commits are parsed and grouped:
    - Monitor logs (CloudWatch Logs)
 
 3. **Smoke Tests (Automated + Manual)**
+
    ```bash
    # Automated (in workflow):
    curl -f https://bot.example.com/health
    curl -f https://bot.example.com/metrics
-   
+
    # Manual (in Discord):
    /voice status  # Should show connected
    # Send message in voice channel
@@ -904,12 +935,14 @@ Commits are parsed and grouped:
 ### Rollback (if needed)
 
 **Automatic (on health check failure):**
+
 - GitHub Actions automatically reverts
 - Previous version restored
 - Team notified
 - Incident created
 
 **Manual Rollback:**
+
 ```bash
 # SSH to production server
 ssh deploy@prod.example.com
@@ -953,11 +986,11 @@ router.get('/health', (req, res) => {
         services: {
           voice: 'unhealthy',
           stts: 'ok',
-          tts: 'ok'
-        }
+          tts: 'ok',
+        },
       });
     }
-    
+
     res.json({
       status: 'healthy',
       timestamp: new Date(),
@@ -966,8 +999,8 @@ router.get('/health', (req, res) => {
       services: {
         voice: 'ok',
         stts: 'ok',
-        tts: 'ok'
-      }
+        tts: 'ok',
+      },
     });
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message });
@@ -989,33 +1022,33 @@ const register = new prometheus.Registry();
 export const voiceConnectionsTotal = new prometheus.Counter({
   name: 'voice_connections_total',
   help: 'Total voice connections attempted',
-  registers: [register]
+  registers: [register],
 });
 
 export const voiceConnectionsActive = new prometheus.Gauge({
   name: 'voice_connections_active',
   help: 'Currently active voice connections',
-  registers: [register]
+  registers: [register],
 });
 
 export const transcriptionsTotal = new prometheus.Counter({
   name: 'transcriptions_total',
   help: 'Total transcriptions processed',
-  registers: [register]
+  registers: [register],
 });
 
 export const responseLatency = new prometheus.Histogram({
   name: 'response_latency_seconds',
   help: 'Response latency in seconds',
   buckets: [0.1, 0.5, 1, 2, 3, 5],
-  registers: [register]
+  registers: [register],
 });
 
 export const voiceErrors = new prometheus.Counter({
   name: 'voice_errors_total',
   help: 'Total voice errors',
   labelNames: ['error_type'],
-  registers: [register]
+  registers: [register],
 });
 
 router.get('/metrics', (req, res) => {
@@ -1037,7 +1070,7 @@ Sentry.init({
   beforeSend(event) {
     // Filter out development errors if needed
     return event;
-  }
+  },
 });
 
 // Catch all unhandled exceptions
@@ -1064,17 +1097,19 @@ const logger = winston.createLogger({
   format: winston.format.json(),
   transports: [
     new winston.transports.Console(),
-    ...(process.env.ENVIRONMENT === 'production' ? [
-      new WinstonCloudWatch({
-        logGroupName: '/aws/discord-voice/production',
-        logStreamName: `${process.env.HOSTNAME || 'unknown'}-${Date.now()}`,
-        awsRegion: 'us-east-1',
-        messageFormatter: ({level, message, meta}) => {
-          return `[${level}] ${message} ${JSON.stringify(meta)}`;
-        }
-      })
-    ] : [])
-  ]
+    ...(process.env.ENVIRONMENT === 'production'
+      ? [
+          new WinstonCloudWatch({
+            logGroupName: '/aws/discord-voice/production',
+            logStreamName: `${process.env.HOSTNAME || 'unknown'}-${Date.now()}`,
+            awsRegion: 'us-east-1',
+            messageFormatter: ({ level, message, meta }) => {
+              return `[${level}] ${message} ${JSON.stringify(meta)}`;
+            },
+          }),
+        ]
+      : []),
+  ],
 });
 
 export default logger;
@@ -1118,7 +1153,7 @@ Health check runs
 Health check FAILS?
   ├→ YES: Revert commit → Rebuild → Restart → Verify
   └→ NO: Continue to manual verification
-  
+
 Manual verification in Discord
   ├→ FAILED: Manually trigger rollback
   └→ SUCCESS: Mark deployment complete
@@ -1127,6 +1162,7 @@ Manual verification in Discord
 ### Manual Rollback Procedure
 
 **Quick Rollback (< 2 minutes):**
+
 ```bash
 # SSH to production
 ssh deploy@prod.example.com
@@ -1145,6 +1181,7 @@ curl http://localhost:3001/health
 ```
 
 **Full Rollback (if above fails):**
+
 ```bash
 # Revert to previous git tag
 git fetch origin
@@ -1160,18 +1197,21 @@ curl http://localhost:3001/health
 ### Incident Response
 
 **Level 1 (Minor - Response <30min):**
+
 - Error rate elevated but <2%
 - Latency slightly increased but <5s
 - No data loss
 - **Action:** Monitor, collect logs, plan fix
 
 **Level 2 (Major - Response <5min):**
+
 - Error rate >2%
 - Service degraded but functional
 - **Action:** Trigger rollback, investigate
 - **Comms:** Notify users, provide ETA
 
 **Level 3 (Critical - Response <1min):**
+
 - Service down or responding with errors
 - Data loss possible
 - **Action:** Immediate rollback, page on-call
@@ -1182,6 +1222,7 @@ curl http://localhost:3001/health
 ## Implementation Roadmap
 
 ### Phase 8.1: Infrastructure Setup (4 hours)
+
 - [ ] Create GitHub Actions workflow files
 - [ ] Set up GitHub Secrets
 - [ ] Create Discord bot applications (dev/staging/prod)
@@ -1189,6 +1230,7 @@ curl http://localhost:3001/health
 - [ ] Test local Docker build
 
 ### Phase 8.2: CI/CD Workflows (6 hours)
+
 - [ ] Implement test.yml workflow
 - [ ] Implement build.yml workflow
 - [ ] Set up Codecov integration
@@ -1196,6 +1238,7 @@ curl http://localhost:3001/health
 - [ ] Test workflow with PR/merge
 
 ### Phase 8.3: Staging Deployment (3 hours)
+
 - [ ] Set up staging server (AWS/DO)
 - [ ] Create deploy-staging.yml workflow
 - [ ] Deploy to staging successfully
@@ -1203,6 +1246,7 @@ curl http://localhost:3001/health
 - [ ] Document staging deployment procedure
 
 ### Phase 8.4: Production Setup (4 hours)
+
 - [ ] Set up production server
 - [ ] Create deploy-prod.yml workflow
 - [ ] Configure health check endpoints
@@ -1210,6 +1254,7 @@ curl http://localhost:3001/health
 - [ ] Configure CloudWatch logs + alarms
 
 ### Phase 8.5: Monitoring & Observability (3 hours)
+
 - [ ] Implement health check endpoint
 - [ ] Implement metrics endpoint
 - [ ] Set up Sentry integration
@@ -1217,6 +1262,7 @@ curl http://localhost:3001/health
 - [ ] Create monitoring dashboards
 
 ### Phase 8.6: Incident Response (2 hours)
+
 - [ ] Document rollback procedures
 - [ ] Test automatic rollback
 - [ ] Create incident response plan
@@ -1224,6 +1270,7 @@ curl http://localhost:3001/health
 - [ ] Document SLAs and escalation
 
 ### Phase 8.7: Documentation (2 hours)
+
 - [ ] Write DEPLOYMENT.md (ops guide)
 - [ ] Write SECRETS.md (configuration)
 - [ ] Write TROUBLESHOOTING.md (ops)
@@ -1231,6 +1278,7 @@ curl http://localhost:3001/health
 - [ ] Write RELEASE_NOTES.md
 
 ### Phase 8.8: Final Testing (4 hours)
+
 - [ ] Test complete CI pipeline
 - [ ] Test complete CD pipeline
 - [ ] Test rollback procedure
@@ -1238,6 +1286,7 @@ curl http://localhost:3001/health
 - [ ] Security review
 
 ### Phase 8.9: Launch (2 hours)
+
 - [ ] Final production checklist
 - [ ] Deploy to production
 - [ ] Monitor first 30 minutes

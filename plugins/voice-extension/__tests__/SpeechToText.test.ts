@@ -5,13 +5,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import {
-  SpeechToText,
-  VoiceActivityDetector,
-  TranscriptionResult,
-  STTConfig,
-  VADConfig,
-} from '../src/SpeechToText.js';
+import { SpeechToText, VoiceActivityDetector, TranscriptionResult, STTConfig, VADConfig } from '../src/SpeechToText.js';
 
 // ============================================================
 // SECTION A: VoiceActivityDetector Initialization (TC-001-006)
@@ -317,11 +311,7 @@ describe('SpeechToText - Section E: Transcription Processing', () => {
   });
 
   test('TC-033: Should batch transcribe multiple audio segments', async () => {
-    const segments = [
-      Buffer.alloc(48000 * 2),
-      Buffer.alloc(48000 * 2),
-      Buffer.alloc(48000 * 2),
-    ];
+    const segments = [Buffer.alloc(48000 * 2), Buffer.alloc(48000 * 2), Buffer.alloc(48000 * 2)];
     const results = await stt.transcribeBatch(segments);
     expect(results).toHaveLength(3);
     results.forEach((r) => {
