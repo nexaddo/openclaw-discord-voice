@@ -609,7 +609,7 @@ export class VoiceCommandPipeline {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-              throw new Error(`Agent API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Agent API error: ${response.status} ${response.statusText}`);
       }
 
       const data = (await response.json()) as Record<string, unknown>;
