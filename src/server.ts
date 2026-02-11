@@ -196,12 +196,24 @@ class VoiceServer {
 
   /**
    * Setup health check endpoint
+   * Fix 2a: Lightweight health endpoint with optional JSON detail
+   * - Default: minimal response (plain text "OK")
+   * - With ?detail=1: full JSON status
    */
   private setupHealthCheck(): void {
     this.app.get('/health', (req: Request, res: Response) => {
-      const healthCheck = this.getHealthStatus();
-      const statusCode = healthCheck.status === 'unhealthy' ? 503 : 200;
-      res.status(statusCode).json(healthCheck);
+      // Check if detail is requested
+      const wantDetail = req.query.detail === '1' || req.query.detail === 'true';
+      
+      if (!wantDetail) {
+        // Lightweight response: just text status
+        res.status(200).set('Content-Type', 'text/plain').send('OK');
+      } else {
+        // Full health check response
+        const healthCheck = this.getHealthStatus();
+        const statusCode = healthCheck.status === 'unhealthy' ? 503 : 200;
+        res.status(statusCode).json(healthCheck);
+      }
     });
   }
 
