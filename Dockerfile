@@ -8,6 +8,21 @@ RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 RUN npm ci --only=production && npm run build
 
+# Fix 2d: Validate dist/ directory was created successfully
+RUN if [ ! -d dist ]; then \
+      echo "ERROR: dist/ directory not found after build" && \
+      exit 1; \
+    fi && \
+    echo "✓ dist/ directory found" && \
+    FILE_COUNT=$(find dist -type f | wc -l) && \
+    echo "✓ dist/ contains $FILE_COUNT files" && \
+    if [ "$FILE_COUNT" -lt 5 ]; then \
+      echo "ERROR: dist/ directory appears to be empty or incomplete" && \
+      exit 1; \
+    fi && \
+    JS_COUNT=$(find dist -name "*.js" | wc -l) && \
+    echo "✓ dist/ contains $JS_COUNT JavaScript files"
+
 # Stage 2: Runtime
 FROM node:18-alpine
 WORKDIR /app
