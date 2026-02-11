@@ -1,13 +1,9 @@
-/**
- * Discord Voice Integration Server
- * Main HTTP server with health checks and metrics endpoints
- */
-
 import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import os from 'os';
 import { DiscordPlugin } from '../plugins/discord-plugin/src/index.js';
 
+// Fix 2e: Type definitions to replace `any`
 interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';
   timestamp: string;
@@ -165,12 +161,14 @@ class VoiceServer {
     pipeline_active_sessions: MetricsCache;
     pipeline_request_duration_seconds: MetricsCache;
   };
-  private discordPlugin: any;
+  // Fix 2e: Type discord plugin properly instead of using `any`
+  private discordPlugin: DiscordPlugin | null;
 
   constructor(port: number = 3000) {
     this.app = express();
     this.port = port;
     this.startTime = Date.now();
+    this.discordPlugin = null;
     this.metricsData = {
       discord_voice_connect_total: new MetricsCache(),
       pipeline_active_sessions: new MetricsCache(),
@@ -360,16 +358,19 @@ class VoiceServer {
    * Update metrics
    * Aggregates metrics by endpoint+method to prevent memory leaks
    */
-  updateMetrics(type: 'connection' | 'session' | 'duration', guildId: string, value: any): void {
+  updateMetrics(type: 'connection' | 'session' | 'duration', guildId: string, value: number | string): void {
+    // Fix 2e: Type value parameter - convert to number if needed
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    
     switch (type) {
       case 'connection':
-        this.metricsData.discord_voice_connect_total.addMetric(guildId, value);
+        this.metricsData.discord_voice_connect_total.addMetric(guildId, numValue);
         break;
       case 'session':
-        this.metricsData.pipeline_active_sessions.addMetric(guildId, value);
+        this.metricsData.pipeline_active_sessions.addMetric(guildId, numValue);
         break;
       case 'duration':
-        this.metricsData.pipeline_request_duration_seconds.addMetric(guildId, value);
+        this.metricsData.pipeline_request_duration_seconds.addMetric(guildId, numValue);
         break;
       default:
         break;
@@ -408,8 +409,9 @@ class VoiceServer {
 
   /**
    * Set Discord plugin reference
+   * Fix 2e: Type plugin parameter with DiscordPlugin type
    */
-  setDiscordPlugin(plugin: any): void {
+  setDiscordPlugin(plugin: DiscordPlugin | null): void {
     this.discordPlugin = plugin;
   }
 }
