@@ -21,17 +21,150 @@ interface HealthCheckResult {
   };
 }
 
+interface MetricsEntry {
+  sum: number;
+  count: number;
+  timestamp: number;
+}
+
 interface MetricsData {
-  discord_voice_connect_total: Map<string, number>;
-  pipeline_active_sessions: Map<string, number>;
-  pipeline_request_duration_seconds: Map<string, any>;
+  discord_voice_connect_total: Map<string, MetricsEntry>;
+  pipeline_active_sessions: Map<string, MetricsEntry>;
+  pipeline_request_duration_seconds: Map<string, MetricsEntry>;
+  lastCleanup: number;
+}
+
+/**
+ * Fix 1c: Memory Leak Prevention
+ * Time-windowed metrics cache with automatic cleanup
+ * - 5-minute rolling window for metric data
+ * - Aggregate by endpoint+method (not per-request)
+ * - Maximum 1000 entries per metric type
+ * - Cleanup every 60 seconds
+ */
+class MetricsCache {
+  private readonly WINDOW_SIZE_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly CLEANUP_INTERVAL_MS = 60 * 1000; // 1 minute
+  private readonly MAX_ENTRIES = 1000;
+  private cache: Map<string, MetricsEntry>;
+  private cleanupTimer?: NodeJS.Timeout;
+
+  constructor() {
+    this.cache = new Map();
+    this.startCleanupInterval();
+  }
+
+  addMetric(key: string, value: number): void {
+    const now = Date.now();
+
+    if (this.cache.has(key)) {
+      const entry = this.cache.get(key)!;
+      // Aggregate: track sum and count for proper averaging
+      entry.sum += value;
+      entry.count++;
+      entry.timestamp = now;
+    } else {
+      this.cache.set(key, { sum: value, count: 1, timestamp: now });
+    }
+
+    // Enforce max entries
+    if (this.cache.size > this.MAX_ENTRIES) {
+      this.evictOldest();
+    }
+  }
+
+  getMetric(key: string): number | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    const age = Date.now() - entry.timestamp;
+    if (age > this.WINDOW_SIZE_MS) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.sum / entry.count;
+  }
+
+  getAllMetrics(): Map<string, { value: number; count: number }> {
+    const result = new Map<string, { value: number; count: number }>();
+    const now = Date.now();
+
+    for (const [key, entry] of this.cache.entries()) {
+      const age = now - entry.timestamp;
+      if (age <= this.WINDOW_SIZE_MS) {
+        result.set(key, { value: entry.sum / entry.count, count: entry.count });
+      }
+    }
+
+    return result;
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    let removed = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      const age = now - entry.timestamp;
+      if (age > this.WINDOW_SIZE_MS) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+
+    if (removed > 0) {
+      console.log(`[Metrics] Cleaned up ${removed} old entries (${this.cache.size} remaining)`);
+    }
+  }
+
+  private evictOldest(): void {
+    let oldest: { key: string; timestamp: number } | null = null;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (!oldest || entry.timestamp < oldest.timestamp) {
+        oldest = { key, timestamp: entry.timestamp };
+      }
+    }
+
+    if (oldest) {
+      this.cache.delete(oldest.key);
+    }
+  }
+
+  private startCleanupInterval(): void {
+    this.cleanupTimer = setInterval(() => {
+      this.cleanup();
+    }, this.CLEANUP_INTERVAL_MS);
+
+    if (this.cleanupTimer.unref) {
+      this.cleanupTimer.unref();
+    }
+  }
+
+  stop(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
 }
 
 class VoiceServer {
   private app: Express;
   private port: number;
   private startTime: number;
-  private metricsData: MetricsData;
+  private metricsData: {
+    discord_voice_connect_total: MetricsCache;
+    pipeline_active_sessions: MetricsCache;
+    pipeline_request_duration_seconds: MetricsCache;
+  };
   private discordPlugin: any;
 
   constructor(port: number = 3000) {
@@ -39,9 +172,9 @@ class VoiceServer {
     this.port = port;
     this.startTime = Date.now();
     this.metricsData = {
-      discord_voice_connect_total: new Map(),
-      pipeline_active_sessions: new Map(),
-      pipeline_request_duration_seconds: new Map(),
+      discord_voice_connect_total: new MetricsCache(),
+      pipeline_active_sessions: new MetricsCache(),
+      pipeline_request_duration_seconds: new MetricsCache(),
     };
   }
 
@@ -160,6 +293,7 @@ class VoiceServer {
 
   /**
    * Format metrics in Prometheus format
+   * Uses aggregated metrics from time-windowed cache
    */
   private formatMetrics(): string {
     let output = '';
@@ -168,11 +302,12 @@ class VoiceServer {
     output += '# HELP discord_voice_connect_total Discord voice connections\n';
     output += '# TYPE discord_voice_connect_total counter\n';
 
-    if (this.metricsData.discord_voice_connect_total.size === 0) {
+    const connectionMetrics = this.metricsData.discord_voice_connect_total.getAllMetrics();
+    if (connectionMetrics.size === 0) {
       output += 'discord_voice_connect_total{guild_id="default",status="success"} 0\n';
     } else {
-      this.metricsData.discord_voice_connect_total.forEach((value, key) => {
-        output += `discord_voice_connect_total{guild_id="${key}",status="success"} ${value}\n`;
+      connectionMetrics.forEach((entry, key) => {
+        output += `discord_voice_connect_total{guild_id="${key}",status="success"} ${Math.round(entry.value)}\n`;
       });
     }
 
@@ -182,11 +317,12 @@ class VoiceServer {
     output += '# HELP pipeline_active_sessions Active voice sessions\n';
     output += '# TYPE pipeline_active_sessions gauge\n';
 
-    if (this.metricsData.pipeline_active_sessions.size === 0) {
+    const sessionMetrics = this.metricsData.pipeline_active_sessions.getAllMetrics();
+    if (sessionMetrics.size === 0) {
       output += 'pipeline_active_sessions{guild_id="default"} 0\n';
     } else {
-      this.metricsData.pipeline_active_sessions.forEach((value, key) => {
-        output += `pipeline_active_sessions{guild_id="${key}"} ${value}\n`;
+      sessionMetrics.forEach((entry, key) => {
+        output += `pipeline_active_sessions{guild_id="${key}"} ${Math.round(entry.value)}\n`;
       });
     }
 
@@ -222,20 +358,18 @@ class VoiceServer {
 
   /**
    * Update metrics
+   * Aggregates metrics by endpoint+method to prevent memory leaks
    */
   updateMetrics(type: 'connection' | 'session' | 'duration', guildId: string, value: any): void {
     switch (type) {
       case 'connection':
-        this.metricsData.discord_voice_connect_total.set(
-          guildId,
-          (this.metricsData.discord_voice_connect_total.get(guildId) || 0) + value,
-        );
+        this.metricsData.discord_voice_connect_total.addMetric(guildId, value);
         break;
       case 'session':
-        this.metricsData.pipeline_active_sessions.set(guildId, value);
+        this.metricsData.pipeline_active_sessions.addMetric(guildId, value);
         break;
       case 'duration':
-        this.metricsData.pipeline_request_duration_seconds.set(guildId, value);
+        this.metricsData.pipeline_request_duration_seconds.addMetric(guildId, value);
         break;
       default:
         break;
@@ -261,10 +395,15 @@ class VoiceServer {
   }
 
   /**
-   * Stop the server
+   * Stop the server and cleanup resources
    */
   async stop(): Promise<void> {
     console.log(`[${new Date().toISOString()}] Voice server stopping...`);
+    
+    // Stop metrics cleanup timers
+    this.metricsData.discord_voice_connect_total.stop();
+    this.metricsData.pipeline_active_sessions.stop();
+    this.metricsData.pipeline_request_duration_seconds.stop();
   }
 
   /**
@@ -275,4 +414,4 @@ class VoiceServer {
   }
 }
 
-export { VoiceServer, HealthCheckResult, MetricsData };
+export { VoiceServer, HealthCheckResult, MetricsData, MetricsEntry, MetricsCache };
